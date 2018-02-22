@@ -16,7 +16,7 @@ class TestYP(unittest.TestCase):
     def testSetupYP(self):
         yp = YP()
         yp.assertFact(yp.atom('cat'),yp.atom('tom'))
-        V1 = Variable()
+        V1 = yp.variable()
         args = [V1]
         q = yp.matchDynamic(yp.atom('cat'),args)
         r = [ [ v.getValue() for v in args ] for r in q ]
@@ -24,12 +24,12 @@ class TestYP(unittest.TestCase):
     def testMatchAnswerDifferentArity(self):
         yp = YP()
         a = Answer([yp.atom('tom')])
-        r = [x for x in a.match([Variable(), Variable()])]
+        r = [x for x in a.match([yp.variable(), yp.variable()])]
         self.assertEquals(r,[])
     def testMatchAnswerMatching(self):
         yp = YP()
         a = Answer([yp.atom('tom')])
-        v = Variable()
+        v = yp.variable()
         r = [v.getValue() for x in a.match([v])]
         self.assertEquals(r,[yp.atom('tom')])
     def testMatchAnswerNotMatching(self):
@@ -53,10 +53,21 @@ class TestYP(unittest.TestCase):
     def testUnifyVariableUnbound(self):
         yp = YP()
         a1 = yp.atom('tom')
-        v1 = Variable()
+        v1 = yp.variable()
         r = [ v1.getValue() for x in unify(v1,a1) ]
         # self.assertEquals(r,[False])
         self.assertEquals(r,[yp.atom('tom')])
+    def testUnifyVariableInteger(self):
+        yp = YP()
+        v1 = yp.variable()
+        r = [ v1.getValue() for x in unify(v1,5) ]
+        self.assertEquals(r,[5])
+    def testUnifyVariableComplexAtom(self):
+        yp = YP()
+        a1 = yp.functor(yp.atom("point"),1,1)
+        v1 = yp.variable()
+        r = [ v1.getValue() for x in unify(v1,a1) ]
+        self.assertEquals(r,[yp.functor(yp.atom('point'),1,1)])
 
 
 if __name__=="__main__":

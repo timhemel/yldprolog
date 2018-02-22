@@ -31,7 +31,7 @@ class Variable(IUnifiable):
         return self._value
     def unify(self,arg):
         if not self._isBound:
-            self._value = arg.getValue()
+            self._value = getValue(arg)
             if self._value == self:
                 yield False
             else:
@@ -92,9 +92,14 @@ class YPSuccess(object):
     def close(self):
         pass
 
+def getValue(v):
+    if isinstance(v,IUnifiable): # TODO: does getValue only occur on IUnifiable
+        return v.getValue()
+    return v
+
 def unify(term1,term2):
-    arg1 = term1.getValue()
-    arg2 = term2.getValue()
+    arg1 = getValue(term1)
+    arg2 = getValue(term2)
     print arg1,arg2
     if isinstance(arg1,IUnifiable):
         return arg1.unify(arg2)
@@ -114,6 +119,8 @@ class YP(object):
     def atom(self,name):
         self._atomStore.setdefault(name,Atom(name))
         return self._atomStore[name]
+    def variable(self):
+        return Variable()
 
 
     def _findPredicates(self,name,arity):
