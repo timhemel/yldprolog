@@ -4,12 +4,10 @@ class IUnifiable(object):
 class Atom(IUnifiable):
     def __init__(self,name):
         self._name = name
-    def getValue(self):
-        return self
     def name(self):
         return self._name
     def unify(self,term):
-        arg = term.getValue()
+        arg = getValue(term)
         if isinstance(arg,Atom):
             if self._name == arg._name:
                 return YPSuccess()
@@ -45,30 +43,27 @@ class Variable(IUnifiable):
                 yield False
 
 
+class Functor(IUnifiable):
+    def __init__(self,name,args):
+        self._name = name
+        self._args = args
+    def unify(self,term):
+        arg = getValue(term)
+        if isinstance(arg, Functor):
+            if self._name.name() == arg._name.name():
+                return unifyArrays(self._args,arg._args)
+            else:
+                return YPFail()
+        elif isinstance(arg,Variable):
+            return arg.unify(self)
+        else:
+            return YPFail()
+
 class Answer:
     def __init__(self,values):
         self.values = values
     def match(self,args):
-        if len(args) != len(self.values):
-            return
-        # try to unify the arguments
-        gotMatch = True
-        iterators = [None]*len(args)
-        for i in range(len(args)):
-            # unify tries to unify the two arguments, returns an iterator?
-            iterators[i] = iter(unify(args[i],self.values[i]))
-            try:
-                iterators[i].next()
-            except StopIteration:
-                # no unification possible
-                gotMatch = False
-                break
-        try:
-            if gotMatch:
-                yield True
-        finally:
-            for i in range(len(args)):
-                iterators[i].close()
+        return unifyArrays(args,self.values)
 
 class YPFail(object):
     def __iter__(self):
@@ -93,14 +88,13 @@ class YPSuccess(object):
         pass
 
 def getValue(v):
-    if isinstance(v,IUnifiable): # TODO: does getValue only occur on IUnifiable
+    if isinstance(v,Variable): # TODO: does getValue only occur on Variable?
         return v.getValue()
     return v
 
 def unify(term1,term2):
     arg1 = getValue(term1)
     arg2 = getValue(term2)
-    print arg1,arg2
     if isinstance(arg1,IUnifiable):
         return arg1.unify(arg2)
     elif isinstance(arg2,IUnifiable):
@@ -110,6 +104,26 @@ def unify(term1,term2):
             return YPSuccess()
         else:
             return YPFail()
+
+def unifyArrays(array1,array2):
+    if len(array1) != len(array2):
+        return
+    iterators = [None]*len(array1)
+    gotMatch = True
+    for i in range(len(array1)):
+        iterators[i] = iter(unify(array1[i],array2[i]))
+        try:
+            iterators[i].next()
+        except StopIteration:
+            gotMatch = False
+            break
+    try:
+        if gotMatch:
+            yield False
+    finally:
+        for i in range(len(array1)):
+            iterators[i].close()
+
 
 
 class YP(object):
@@ -121,6 +135,8 @@ class YP(object):
         return self._atomStore[name]
     def variable(self):
         return Variable()
+    def functor(self,name,*args):
+        return Functor(name,args)
 
 
     def _findPredicates(self,name,arity):

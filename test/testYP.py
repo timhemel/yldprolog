@@ -62,12 +62,44 @@ class TestYP(unittest.TestCase):
         v1 = yp.variable()
         r = [ v1.getValue() for x in unify(v1,5) ]
         self.assertEquals(r,[5])
+    def testUnifyVariableWithVariable(self):
+        yp = YP()
+        v1 = yp.variable()
+        v2 = yp.variable()
+        r = [ (v1.getValue(),v2.getValue()) for x in unify(v1,v2) ]
+        self.assertEquals(len(r),1)
+        self.assertEquals(r[0][0],r[0][1])
     def testUnifyVariableComplexAtom(self):
         yp = YP()
         a1 = yp.functor(yp.atom("point"),1,1)
         v1 = yp.variable()
         r = [ v1.getValue() for x in unify(v1,a1) ]
-        self.assertEquals(r,[yp.functor(yp.atom('point'),1,1)])
+        self.assertEquals(r,[a1])
+    def testUnifyComplexAtoms(self):
+        yp = YP()
+        v1 = yp.variable()
+        v2 = yp.variable()
+        a1 = yp.functor(yp.atom("point"),v1,2)
+        a2 = yp.functor(yp.atom("point"),1,v2)
+        r = [ (v1.getValue(),v2.getValue()) for x in unify(a1,a2) ]
+        self.assertEquals(r,[(1,2)])
+    def testUnifyComplexAtomsNotMatching(self):
+        yp = YP()
+        v1 = yp.variable()
+        a1 = yp.functor(yp.atom("point"),v1,2)
+        a2 = yp.functor(yp.atom("point"),1,1)
+        r = [ v1.getValue() for x in unify(a1,a2) ]
+        self.assertEquals(r,[])
+    def testUnifyComplexAtomsFreeVariable(self):
+        yp = YP()
+        v1 = yp.variable()
+        v2 = yp.variable()
+        a1 = yp.functor(yp.atom("point"),v1,2)
+        a2 = yp.functor(yp.atom("point"),v2,2)
+        r = [ (v1.getValue(),v2.getValue()) for x in unify(a1,a2) ]
+        self.assertEquals(len(r),1)
+        self.assertEquals(r[0][0],r[0][1])
+     
 
 
 if __name__=="__main__":
