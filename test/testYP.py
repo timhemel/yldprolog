@@ -15,12 +15,64 @@ class TestYP(unittest.TestCase):
         pass
     def testSetupYP(self):
         yp = YP()
-        yp.assertFact(yp.atom('cat'),yp.atom('tom'))
+        yp.assertFact(yp.atom('cat'),[yp.atom('tom')])
         V1 = yp.variable()
         args = [V1]
         q = yp.matchDynamic(yp.atom('cat'),args)
         r = [ [ v.getValue() for v in args ] for r in q ]
         self.assertEquals(r, [ [yp.atom('tom')] ])
+
+    def testMatchExampleHorizontalVertical(self):
+        yp = YP()
+        X = yp.variable()
+        Y = yp.variable()
+        X1 = yp.variable()
+        Y1 = yp.variable()
+        # vertical(seg(point(X,Y),point(X,Y1))).
+        yp.assertFact(yp.atom('vertical'), [
+            yp.functor(yp.atom('seg'),
+                yp.functor(yp.atom('point'),X,Y),
+                yp.functor(yp.atom('point'),X,Y1)
+            )
+        ])
+        # horizontal(seg(point(X,Y),point(X1,Y))).
+        yp.assertFact(yp.atom('horizontal'), [
+            yp.functor(yp.atom('seg'),
+                yp.functor(yp.atom('point'),X,Y),
+                yp.functor(yp.atom('point'),X1,Y)
+            )
+        ])
+
+        q0 = yp.matchDynamic(yp.atom('vertical'), [
+            yp.functor(yp.atom('seg'),
+                yp.functor(yp.atom('point'),1,1),
+                yp.functor(yp.atom('point'),1,2)
+            )
+        ])
+
+        q1 = yp.matchDynamic(yp.atom('vertical'), [
+            yp.functor(yp.atom('seg'),
+                yp.functor(yp.atom('point'),1,1),
+                yp.functor(yp.atom('point'),2,Y)
+            )
+        ])
+
+        q2 = yp.matchDynamic(yp.atom('horizontal'), [
+            yp.functor(yp.atom('seg'),
+                yp.functor(yp.atom('point'),1,1),
+                yp.functor(yp.atom('point'),2,Y)
+            )
+        ])
+                
+        r0 = [ r for r in q0 ]
+        r1 = [ r for r in q1 ]
+        r2 = [ Y.getValue() for r in q2 ]
+
+        self.assertEquals(r0,[False])
+        self.assertEquals(r1,[])
+        self.assertEquals(r2,[1])
+
+
     def testMatchAnswerDifferentArity(self):
         yp = YP()
         a = Answer([yp.atom('tom')])
@@ -37,6 +89,8 @@ class TestYP(unittest.TestCase):
         a = Answer([yp.atom('tom'),yp.atom('cat')])
         r = [x for x in a.match([yp.atom('tom'),yp.atom('mouse')])]
         self.assertEquals(r,[])
+
+
 
     def testUnifyAtomsEqual(self):
         yp = YP()

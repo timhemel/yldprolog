@@ -109,9 +109,11 @@ def unifyArrays(array1,array2):
     if len(array1) != len(array2):
         return
     iterators = [None]*len(array1)
+    numIterators = 0
     gotMatch = True
     for i in range(len(array1)):
         iterators[i] = iter(unify(array1[i],array2[i]))
+        numIterators += 1
         try:
             iterators[i].next()
         except StopIteration:
@@ -121,7 +123,7 @@ def unifyArrays(array1,array2):
         if gotMatch:
             yield False
     finally:
-        for i in range(len(array1)):
+        for i in range(numIterators):
             iterators[i].close()
 
 
@@ -148,11 +150,11 @@ class YP(object):
     def _updatePredicate(self,name,arity,clauses):
         self._predicatesStore[(name.name(),arity)] = clauses
 
-    def assertFact(self,name,*values):
+    def assertFact(self,name,values):
         """assert values at the end of the set of facts for the predicate with the
         name "name" and the arity len(values).
         "name" must be an Atom.
-        values cannot be unbound variables.
+        values cannot contain unbound variables.
         """
         try:
             clauses = self._findPredicates(name,len(values))
