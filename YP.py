@@ -1,5 +1,8 @@
 import sys
 
+class YPException(Exception):
+    pass
+
 class IUnifiable(object):
     """Base interface for all term types that can be unified."""
     pass
@@ -236,7 +239,7 @@ class YP(object):
         try:
             return self._predicatesStore[(name.name(),arity)]
         except KeyError:
-            raise Exception('TODO: unknown predicate')
+            raise YPException('Unknown predicate: %s/%d' % (name.name(),arity) )
 
     def _updatePredicate(self,name,arity,clauses):
         self._predicatesStore[(name.name(),arity)] = clauses
