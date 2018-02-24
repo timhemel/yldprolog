@@ -167,6 +167,14 @@ class TestYP(unittest.TestCase):
         r = [ v1.getValue() for x in unify(l1,l2) ]
         self.assertEquals(r,[yp.atom("b")])
 
+    def testUnifyListsWithMakelist(self):
+        yp = YP()
+        v1 = yp.variable()
+        l1 = yp.listpair(yp.atom("a"), yp.listpair(yp.atom("b"),yp.ATOM_NIL))
+        l2 = yp.makelist([yp.atom("a"),v1])
+        r = [ v1.getValue() for x in unify(l1,l2) ]
+        self.assertEquals(r,[yp.atom("b")])
+
     # test loading a script
     def testLoadMonkeyAndBananaScript(self):
         yp = YP()
@@ -233,6 +241,19 @@ class TestYP(unittest.TestCase):
         self.assertEquals(sys.getrecursionlimit(),recursion_limit)
         self.assertGreaterEqual(len(r),1)
 
+    def testRunListsScript(self):
+        yp = YP()
+        yp.loadScript('lists.py')
+        l = yp.makelist([yp.atom(x) for x in ['Johnny','Dee Dee','Joey','Tommy','Marky','Richie','Elvis','C. J.']])
+        q = yp.query('member',[ yp.atom('Richie'), l ])
+        r = [ x for x in q ]
+        self.assertEquals(r,[False])
+        v1 = yp.variable()
+        v2 = yp.variable()
+        v3 = yp.variable()
+        q = yp.query('testlist', [yp.makelist([v1,v2,v3])])
+        r = [ [v1.getValue(),v2.getValue(),v3.getValue()] for x in q ]
+        self.assertEqual(r,[[yp.atom('red'),yp.atom('green'),yp.atom('blue')]])
 
 if __name__=="__main__":
     unittest.main()

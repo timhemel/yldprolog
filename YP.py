@@ -99,7 +99,7 @@ class YPSuccess(object):
         pass
 
 def getValue(v):
-    if isinstance(v,Variable): # TODO: does getValue only occur on Variable?
+    if isinstance(v,Variable):
         return v.getValue()
     return v
 
@@ -151,6 +151,8 @@ class YP(object):
                 'functor1': self.functor1,
                 'functor2': self.functor2,
                 'functor3': self.functor3,
+                'listpair': self.listpair,
+                'makelist': self.makelist,
                 'unify': unify,
                 'True': True,
                 'False': False,
@@ -173,6 +175,10 @@ class YP(object):
         return Functor(name,[arg1,arg2,arg3])
     def listpair(self,head,tail):
         return Functor(self.ATOM_DOT,[head,tail])
+    def makelist(self,l):
+        r = reduce( lambda x,y: self.listpair(y,x), reversed(l), self.ATOM_NIL )
+        return r
+
     def loadScript(self,fn):
         execfile(fn,self.evalContext)
         # TODO: raise YPEngineException if loading fails
