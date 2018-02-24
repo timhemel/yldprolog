@@ -223,7 +223,7 @@ class YP(object):
 
     def evaluateBounded(self,query,projection_function,recursion_limit=200):
         """evaluate a query, but limit the recursion depth to recursion_limit. If a query causes a
-        recursion that goes to deep, the query will be aborted and the results so far will be
+        recursion that goes too deep, the query will be aborted and the results so far will be
         returned.
         projection_function is a function taking the generator value (False or True) and maps it
         to anything else, for example the value of an instantiated Variable.
