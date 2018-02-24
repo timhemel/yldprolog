@@ -6,6 +6,8 @@ class Atom(IUnifiable):
         self._name = name
     def name(self):
         return self._name
+    def __str__(self):
+        return "atom(%s)" % self._name
     def unify(self,term):
         arg = getValue(term)
         if isinstance(arg,Atom):
@@ -27,6 +29,10 @@ class Variable(IUnifiable):
         if isinstance(self._value,Variable):
             return self._value.getValue()
         return self._value
+    def __str__(self):
+        if self._isBound:
+            return "var(%s)" % self._value
+        return "var()"
     def unify(self,arg):
         if not self._isBound:
             self._value = getValue(arg)
@@ -47,10 +53,13 @@ class Functor(IUnifiable):
     def __init__(self,name,args):
         self._name = name
         self._args = args
+    def __str__(self):
+        args = ",".join([str(a) for a in self._args])
+        return "%s(%s)" % (self._name,args)
     def unify(self,term):
         arg = getValue(term)
         if isinstance(arg, Functor):
-            if self._name.name() == arg._name.name():
+            if self._name == arg._name:
                 return unifyArrays(self._args,arg._args)
             else:
                 return YPFail()
@@ -95,6 +104,7 @@ def getValue(v):
 def unify(term1,term2):
     arg1 = getValue(term1)
     arg2 = getValue(term2)
+    # print "Unify:\n\t", term1,"\n\t", term2
     if isinstance(arg1,IUnifiable):
         return arg1.unify(arg2)
     elif isinstance(arg2,IUnifiable):
@@ -132,14 +142,38 @@ class YP(object):
     def __init__(self):
         self._atomStore = {}
         self._predicatesStore = {}
-    def atom(self,name):
+        self.evalContext = {
+                '__builtins__': {},
+                'variable': self.variable,
+                'atom': self.atom,
+                'functor': self.functor,
+                'functor1': self.functor1,
+                'functor2': self.functor2,
+                'functor3': self.functor3,
+                'unify': unify,
+                'True': True,
+                'False': False,
+        }
+        self.evalBlacklist = self.evalContext.keys()
+    def atom(self,name,module=None):
         self._atomStore.setdefault(name,Atom(name))
         return self._atomStore[name]
     def variable(self):
         return Variable()
-    def functor(self,name,*args):
+    def functor(self,name,args):
         return Functor(name,args)
-
+    def functor1(self,name,arg):
+        return Functor(name,[arg])
+    def functor2(self,name,arg1,arg2):
+        return Functor(name,[arg1,arg2])
+    def functor3(self,name,arg1,arg2,arg3):
+        return Functor(name,[arg1,arg2,arg3])
+    def loadScript(self,fn):
+        execfile(fn,self.evalContext)
+        # TODO: raise YPEngineException if loading fails
+        print "Loaded script"
+        for k,v in self.evalContext.items():
+            print "\t%s -> %s" % (k,v)
 
     def _findPredicates(self,name,arity):
         try:
@@ -163,6 +197,26 @@ class YP(object):
             clauses = []
         clauses.append(Answer(values))
         self._updatePredicate(name,len(values),clauses)
+    def query(self,name,args):
+        try:
+            if name not in self.evalBlacklist:
+                print self.evalContext.keys()
+                function = self.evalContext[name]
+                return function(*args)
+        except KeyError,e:
+            pass
+        except TypeError,e: # args not matching
+            pass
+
+        try:
+            clauses = self._findPredicates(name,len(values))
+        except Exception,e:
+            pass
+        # check if name is a defined fact or a defined clause
+        print self.evalContext
+        print self._predicatesStore
+        print self._atomStore
+        return self.matchDynamic(self.atom(name),args)
 
     def matchDynamic(self,name,args):
         """

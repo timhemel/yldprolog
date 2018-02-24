@@ -18,7 +18,8 @@ class TestYP(unittest.TestCase):
         yp.assertFact(yp.atom('cat'),[yp.atom('tom')])
         V1 = yp.variable()
         args = [V1]
-        q = yp.matchDynamic(yp.atom('cat'),args)
+        # q = yp.matchDynamic(yp.atom('cat'),args)
+        q = yp.query('cat',args)
         r = [ [ v.getValue() for v in args ] for r in q ]
         self.assertEquals(r, [ [yp.atom('tom')] ])
 
@@ -30,38 +31,41 @@ class TestYP(unittest.TestCase):
         Y1 = yp.variable()
         # vertical(seg(point(X,Y),point(X,Y1))).
         yp.assertFact(yp.atom('vertical'), [
-            yp.functor(yp.atom('seg'),
-                yp.functor(yp.atom('point'),X,Y),
-                yp.functor(yp.atom('point'),X,Y1)
-            )
+            yp.functor('seg', [
+                yp.functor('point',[X,Y]),
+                yp.functor('point',[X,Y1])
+            ])
         ])
         # horizontal(seg(point(X,Y),point(X1,Y))).
         yp.assertFact(yp.atom('horizontal'), [
-            yp.functor(yp.atom('seg'),
-                yp.functor(yp.atom('point'),X,Y),
-                yp.functor(yp.atom('point'),X1,Y)
-            )
+            yp.functor('seg', [
+                yp.functor('point',[X,Y]),
+                yp.functor('point',[X1,Y])
+            ])
         ])
 
-        q0 = yp.matchDynamic(yp.atom('vertical'), [
-            yp.functor(yp.atom('seg'),
-                yp.functor(yp.atom('point'),1,1),
-                yp.functor(yp.atom('point'),1,2)
-            )
+        # q0 = yp.matchDynamic(yp.atom('vertical'), [
+        q0 = yp.query('vertical', [
+            yp.functor('seg', [
+                yp.functor('point',[1,1]),
+                yp.functor('point',[1,2])
+            ])
         ])
 
-        q1 = yp.matchDynamic(yp.atom('vertical'), [
-            yp.functor(yp.atom('seg'),
-                yp.functor(yp.atom('point'),1,1),
-                yp.functor(yp.atom('point'),2,Y)
-            )
+        # q1 = yp.matchDynamic(yp.atom('vertical'), [
+        q1 = yp.query('vertical', [
+            yp.functor('seg', [
+                yp.functor('point',[1,1]),
+                yp.functor('point',[2,Y])
+            ])
         ])
 
-        q2 = yp.matchDynamic(yp.atom('horizontal'), [
-            yp.functor(yp.atom('seg'),
-                yp.functor(yp.atom('point'),1,1),
-                yp.functor(yp.atom('point'),2,Y)
-            )
+        # q2 = yp.matchDynamic(yp.atom('horizontal'), [
+        q2 = yp.query('horizontal', [
+            yp.functor('seg', [
+                yp.functor('point',[1,1]),
+                yp.functor('point',[2,Y])
+            ])
         ])
                 
         r0 = [ r for r in q0 ]
@@ -125,7 +129,7 @@ class TestYP(unittest.TestCase):
         self.assertEquals(r[0][0],r[0][1])
     def testUnifyVariableComplexAtom(self):
         yp = YP()
-        a1 = yp.functor(yp.atom("point"),1,1)
+        a1 = yp.functor("point",[1,1])
         v1 = yp.variable()
         r = [ v1.getValue() for x in unify(v1,a1) ]
         self.assertEquals(r,[a1])
@@ -133,27 +137,69 @@ class TestYP(unittest.TestCase):
         yp = YP()
         v1 = yp.variable()
         v2 = yp.variable()
-        a1 = yp.functor(yp.atom("point"),v1,2)
-        a2 = yp.functor(yp.atom("point"),1,v2)
+        a1 = yp.functor("point",[v1,2])
+        a2 = yp.functor("point",[1,v2])
         r = [ (v1.getValue(),v2.getValue()) for x in unify(a1,a2) ]
         self.assertEquals(r,[(1,2)])
     def testUnifyComplexAtomsNotMatching(self):
         yp = YP()
         v1 = yp.variable()
-        a1 = yp.functor(yp.atom("point"),v1,2)
-        a2 = yp.functor(yp.atom("point"),1,1)
+        a1 = yp.functor("point",[v1,2])
+        a2 = yp.functor("point",[1,1])
         r = [ v1.getValue() for x in unify(a1,a2) ]
         self.assertEquals(r,[])
     def testUnifyComplexAtomsFreeVariable(self):
         yp = YP()
         v1 = yp.variable()
         v2 = yp.variable()
-        a1 = yp.functor(yp.atom("point"),v1,2)
-        a2 = yp.functor(yp.atom("point"),v2,2)
+        a1 = yp.functor("point",[v1,2])
+        a2 = yp.functor("point",[v2,2])
         r = [ (v1.getValue(),v2.getValue()) for x in unify(a1,a2) ]
         self.assertEquals(len(r),1)
         self.assertEquals(r[0][0],r[0][1])
-     
+
+    # test loading a script
+    def testLoadMonkeyAndBananaScript(self):
+        yp = YP()
+        yp.loadScript('monkey.py')
+        # canget(state(atdoor,onfloor,atwindow,hasnot))
+        q = yp.query('canget',[ yp.functor('state',[yp.atom('atdoor'),yp.atom('onfloor'),yp.atom('atwindow'),yp.atom('hasnot')])])
+        # this query has infinitely many solutions, just get the first one
+        self.assertEquals(q.next(),False)
+
+
+    # test concurrency when sourcing scripts
+    def testLoadScriptsConcurrently(self):
+        yp1 = YP()
+        yp2 = YP()
+        yp1.loadScript('script1a.py')
+        yp2.loadScript('script1b.py')
+        X1 = yp1.variable()
+        q1 = yp1.query('fact',[X1])
+        X2 = yp2.variable()
+        q2 = yp2.query('fact',[X2])
+        r1 = [ X1.getValue() for r in q1 ]
+        r2 = [ X2.getValue() for r in q2 ]
+        self.assertNotEquals(r1,r2)
+
+    # test concurrency when asserting facts
+    def testAssertFactsConcurrently(self):
+        yp1 = YP()
+        yp2 = YP()
+        yp1.assertFact(yp1.atom('fact'), [yp1.atom('red')])
+        yp2.assertFact(yp2.atom('fact'), [yp2.atom('blue')])
+        X1 = yp1.variable()
+        q1 = yp1.query('fact',[X1])
+        X2 = yp2.variable()
+        q2 = yp2.query('fact',[X2])
+        r1 = [ X1.getValue() for r in q1 ]
+        r2 = [ X2.getValue() for r in q2 ]
+        self.assertNotEquals(r1,r2)
+
+
+    # test implicit clauses with user defined functions
+    # loop detection and perhaps caching ?
+    # protect against infinite queries by asking only the first result?
 
 
 if __name__=="__main__":
