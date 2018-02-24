@@ -1,3 +1,5 @@
+import sys
+
 class IUnifiable(object):
     pass
 
@@ -218,6 +220,28 @@ class YP(object):
         # print self._predicatesStore
         # print self._atomStore
         return self.matchDynamic(self.atom(name),args)
+
+    def evaluateBounded(self,query,projection_function,recursion_limit=200):
+        """evaluate a query, but limit the recursion depth to recursion_limit. If a query causes a
+        recursion that goes to deep, the query will be aborted and the results so far will be
+        returned.
+        projection_function is a function taking the generator value (False or True) and maps it
+        to anything else, for example the value of an instantiated Variable.
+        """
+        old_recursionlimit = sys.getrecursionlimit()
+        result = []
+        try:
+            sys.setrecursionlimit(recursion_limit)
+            result = []
+            for x in query:
+                result.append(projection_function(x))
+        except RuntimeError:
+            pass
+        except StopIteration:
+            pass
+        finally:
+            sys.setrecursionlimit(old_recursionlimit)
+        return result
 
     def matchDynamic(self,name,args):
         """

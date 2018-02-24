@@ -196,6 +196,7 @@ class TestYP(unittest.TestCase):
         r2 = [ X2.getValue() for r in q2 ]
         self.assertNotEquals(r1,r2)
 
+    # test implicit clauses with user defined functions
     def testUserDefinedFunction(self):
         yp = YP()
         side_effects = []
@@ -210,9 +211,18 @@ class TestYP(unittest.TestCase):
         r = [ x for x in q ]
         self.assertEquals(side_effects, ['not blue'])
 
-    # test implicit clauses with user defined functions
-    # loop detection and perhaps caching ?
-    # protect against infinite queries by asking only the first result?
+
+
+    def testRunInfiniteScript(self):
+        yp = YP()
+        yp.loadScript('monkey.py')
+        # canget(state(atdoor,onfloor,atwindow,hasnot))
+        q = yp.query('canget',[ yp.functor('state',[yp.atom('atdoor'),yp.atom('onfloor'),yp.atom('atwindow'),yp.atom('hasnot')])])
+        # this query has infinitely many solutions, just get the first one
+        recursion_limit = sys.getrecursionlimit()
+        r = yp.evaluateBounded(q, lambda x:x)
+        self.assertEquals(sys.getrecursionlimit(),recursion_limit)
+        self.assertGreaterEqual(len(r),1)
 
 
 if __name__=="__main__":
