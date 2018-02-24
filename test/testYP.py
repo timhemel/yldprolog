@@ -23,6 +23,14 @@ class TestYP(unittest.TestCase):
         r = [ [ v.getValue() for v in args ] for r in q ]
         self.assertEquals(r, [ [yp.atom('tom')] ])
 
+    def testEvaluateBoundedProjectionFunction(self):
+        yp = YP()
+        yp.assertFact(yp.atom('cat'),[yp.atom('tom')])
+        V1 = yp.variable()
+        q = yp.query('cat',[V1])
+        r = yp.evaluateBounded(q,(lambda x: V1.getValue()))
+        self.assertEquals(r, [ yp.atom('tom') ])
+
     def testMatchExampleHorizontalVertical(self):
         yp = YP()
         X = yp.variable()
