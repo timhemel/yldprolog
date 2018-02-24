@@ -178,6 +178,7 @@ class YP(object):
                 'listpair': self.listpair,
                 'makelist': self.makelist,
                 'unify': unify,
+                'matchDynamic': self.matchDynamic,
                 'True': True,
                 'False': False,
         }
