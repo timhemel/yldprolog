@@ -255,6 +255,16 @@ class TestYP(unittest.TestCase):
         r = [ [v1.getValue(),v2.getValue(),v3.getValue()] for x in q ]
         self.assertEqual(r,[[yp.atom('red'),yp.atom('green'),yp.atom('blue')]])
 
+    def testSploitEval(self):
+        yp = YP()
+        yp.loadScript('eval.py')
+        try:
+            q = yp.query('sploit', ['1+1'])
+            r = [ x for x in q ]
+            self.fail('Expected NameError')
+        except NameError:
+            pass
+
 if __name__=="__main__":
     unittest.main()
 
