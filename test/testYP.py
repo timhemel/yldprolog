@@ -158,6 +158,15 @@ class TestYP(unittest.TestCase):
         self.assertEquals(len(r),1)
         self.assertEquals(r[0][0],r[0][1])
 
+    # lists
+    def testUnifyLists(self):
+        yp = YP()
+        v1 = yp.variable()
+        l1 = yp.listpair(yp.atom("a"), yp.listpair(yp.atom("b"),yp.ATOM_NIL))
+        l2 = yp.listpair(yp.atom("a"), yp.listpair(v1,yp.ATOM_NIL))
+        r = [ v1.getValue() for x in unify(l1,l2) ]
+        self.assertEquals(r,[yp.atom("b")])
+
     # test loading a script
     def testLoadMonkeyAndBananaScript(self):
         yp = YP()

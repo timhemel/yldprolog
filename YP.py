@@ -139,7 +139,6 @@ def unifyArrays(array1,array2):
             iterators[i].close()
 
 
-
 class YP(object):
     def __init__(self):
         self._atomStore = {}
@@ -157,6 +156,8 @@ class YP(object):
                 'False': False,
         }
         self.evalBlacklist = self.evalContext.keys()
+        self.ATOM_NIL = self.atom("[]")
+        self.ATOM_DOT = self.atom(".")
     def atom(self,name,module=None):
         self._atomStore.setdefault(name,Atom(name))
         return self._atomStore[name]
@@ -170,6 +171,8 @@ class YP(object):
         return Functor(name,[arg1,arg2])
     def functor3(self,name,arg1,arg2,arg3):
         return Functor(name,[arg1,arg2,arg3])
+    def listpair(self,head,tail):
+        return Functor(self.ATOM_DOT,[head,tail])
     def loadScript(self,fn):
         execfile(fn,self.evalContext)
         # TODO: raise YPEngineException if loading fails
