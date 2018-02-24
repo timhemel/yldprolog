@@ -171,9 +171,11 @@ class YP(object):
     def loadScript(self,fn):
         execfile(fn,self.evalContext)
         # TODO: raise YPEngineException if loading fails
-        print "Loaded script"
-        for k,v in self.evalContext.items():
-            print "\t%s -> %s" % (k,v)
+        # print "Loaded script"
+        #for k,v in self.evalContext.items():
+        #    print "\t%s -> %s" % (k,v)
+    def registerFunction(self,name,func):
+        self.evalContext[name] = func
 
     def _findPredicates(self,name,arity):
         try:
@@ -200,7 +202,6 @@ class YP(object):
     def query(self,name,args):
         try:
             if name not in self.evalBlacklist:
-                print self.evalContext.keys()
                 function = self.evalContext[name]
                 return function(*args)
         except KeyError,e:
@@ -213,9 +214,9 @@ class YP(object):
         except Exception,e:
             pass
         # check if name is a defined fact or a defined clause
-        print self.evalContext
-        print self._predicatesStore
-        print self._atomStore
+        # print self.evalContext
+        # print self._predicatesStore
+        # print self._atomStore
         return self.matchDynamic(self.atom(name),args)
 
     def matchDynamic(self,name,args):

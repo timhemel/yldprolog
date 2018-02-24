@@ -196,6 +196,19 @@ class TestYP(unittest.TestCase):
         r2 = [ X2.getValue() for r in q2 ]
         self.assertNotEquals(r1,r2)
 
+    def testUserDefinedFunction(self):
+        yp = YP()
+        side_effects = []
+        def func(arg1):
+            # check if arg1 instantiated
+            if isinstance(arg1,Atom) and arg1.name() != "blue":
+                side_effects.append('not blue')
+            for l1 in unify(arg1, yp.atom("blue")):
+                yield False
+        yp.registerFunction('func',func)
+        q = yp.query('func',[yp.atom('red')])
+        r = [ x for x in q ]
+        self.assertEquals(side_effects, ['not blue'])
 
     # test implicit clauses with user defined functions
     # loop detection and perhaps caching ?
