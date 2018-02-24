@@ -1,4 +1,5 @@
 import sys
+import itertools
 
 class YPException(Exception):
     pass
@@ -116,6 +117,12 @@ class YPSuccess(object):
     def close(self):
         pass
 
+def chainFunctions(func1,func2):
+    funcs = [ f for f in [func1,func2] if f != None ]
+    def chain(*args):
+        return itertools.chain(*[ f(*args) for f in funcs])
+    return chain
+
 def getValue(v):
     """Return the value of a Prolog term. Constants and functors will return themselves,
     variables will be expanded if bound. Does not recursively expand variables."""
@@ -220,11 +227,23 @@ class YP(object):
         r = reduce( lambda x,y: self.listpair(y,x), reversed(l), self.ATOM_NIL )
         return r
 
-    def loadScript(self,fn):
+    def loadScript(self,fn,overwrite=True):
         """Loads a compiled Prolog program. Any functions defined in this program will be
         available to the engine and can be used in queries.
+        If overwrite is True, it will overwrite existing function definitions. Otherwise,
+        function definitions will be combined. Functions with the same name but a different
+        number of arguments will be overwritten or combined. This could cause runtime errors.
         """
-        execfile(fn,self.evalContext)
+        newContext = self.evalContext.copy()
+        execfile(fn,newContext)
+        for k,v in newContext.items():
+            if self.evalContext.get(k) != v: # difference!
+                # combine
+                if overwrite:
+                    self.evalContext[k] = v
+                else:
+                    # self.evalContext[k] = itertools.chain(self.evalContext.get(k,[]),v)
+                    self.evalContext[k] = chainFunctions(self.evalContext.get(k),v)
         # TODO: raise YPEngineException if loading fails
         # print "Loaded script"
         #for k,v in self.evalContext.items():
@@ -238,9 +257,9 @@ class YP(object):
 
     def _findPredicates(self,name,arity):
         try:
-            return self._predicatesStore[(name.name(),arity)]
+            return self._predicatesStore[(name,arity)]
         except KeyError:
-            raise YPException('Unknown predicate: %s/%d' % (name.name(),arity) )
+            raise YPException('Unknown predicate: %s/%d' % (name,arity) )
 
     def _updatePredicate(self,name,arity,clauses):
         self._predicatesStore[(name.name(),arity)] = clauses
@@ -254,9 +273,9 @@ class YP(object):
         values cannot contain unbound variables.
         """
         try:
-            clauses = self._findPredicates(name,len(values))
+            clauses = self._findPredicates(name.name(),len(values))
             # indexedanswers
-        except Exception,e:
+        except YPException,e:
             clauses = []
         clauses.append(Answer(values))
         self._updatePredicate(name,len(values),clauses)
@@ -284,8 +303,8 @@ class YP(object):
             pass
 
         try:
-            clauses = self._findPredicates(name,len(values))
-        except Exception,e: # TODO: make this a more specific exception
+            clauses = self._findPredicates(name,len(args))
+        except YPException,e:
             pass
         return self.matchDynamic(self.atom(name),args)
 
@@ -326,7 +345,7 @@ class YP(object):
         "name" must be an atom
         Returns an iterator.
         """
-        clauses = self._findPredicates(name,len(args))
+        clauses = self._findPredicates(name.name(),len(args))
         return self._matchAllClauses(clauses, args)
 
     def _matchAllClauses(self,clauses,args):

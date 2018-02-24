@@ -1,0 +1,1 @@
+testlist([cyan,magenta,yellow]).

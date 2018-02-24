@@ -273,6 +273,33 @@ class TestYP(unittest.TestCase):
         except NameError:
             pass
 
+    def testLoadScriptsAddMultipleDefinitions(self):
+        yp = YP()
+        yp.loadScript('defs1.py',overwrite=False)
+        yp.loadScript('defs2.py',overwrite=False)
+        v1 = yp.variable()
+        v2 = yp.variable()
+        v3 = yp.variable()
+        q = yp.query('testlist', [yp.makelist([v1,v2,v3])])
+        r = [ (v1.getValue(),v2.getValue(),v3.getValue()) for x in q ]
+        self.assertEqual(set(r),set([
+            (yp.atom('red'),yp.atom('green'),yp.atom('blue')),
+            (yp.atom('cyan'),yp.atom('magenta'),yp.atom('yellow'))
+        ]))
+
+    def testLoadScriptsOverwriteMultipleDefinitions(self):
+        yp = YP()
+        yp.loadScript('defs1.py',overwrite=True)
+        yp.loadScript('defs2.py',overwrite=True)
+        v1 = yp.variable()
+        v2 = yp.variable()
+        v3 = yp.variable()
+        q = yp.query('testlist', [yp.makelist([v1,v2,v3])])
+        r = [ (v1.getValue(),v2.getValue(),v3.getValue()) for x in q ]
+        self.assertEqual(set(r),set([
+            (yp.atom('cyan'),yp.atom('magenta'),yp.atom('yellow'))
+        ]))
+
 if __name__=="__main__":
     unittest.main()
 
