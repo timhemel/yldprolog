@@ -1,9 +1,12 @@
 import sys
 
 class IUnifiable(object):
+    """Base interface for all term types that can be unified."""
     pass
 
 class Atom(IUnifiable):
+    """A Prolog atom. Atoms with the same name will be the same object, i.e. there will never
+    be two different atoms with the same name."""
     def __init__(self,name):
         self._name = name
     def name(self):
@@ -24,9 +27,14 @@ class Atom(IUnifiable):
 
 
 class Variable(IUnifiable):
+    """A Prolog variable. Variables can be inspected while iterating through the results of
+    a query."""
     def __init__(self):
         self._isBound = False
     def getValue(self):
+        """if the variable is bound, return the bound value, otherwise return the variable
+        object itself. Will resolve the value recursively for variables that are bound to
+        another variable."""
         if not self._isBound: return self
         if isinstance(self._value,Variable):
             return self._value.getValue()
@@ -52,7 +60,11 @@ class Variable(IUnifiable):
 
 
 class Functor(IUnifiable):
+    """A Prolog functor."""
     def __init__(self,name,args):
+        """name is the name of the functor.
+        args is a list of Prolog terms and contains the functor arguments.
+        """
         self._name = name
         self._args = args
     def __str__(self):
@@ -71,12 +83,14 @@ class Functor(IUnifiable):
             return YPFail()
 
 class Answer:
+    """Datastructure to represent predicates/facts."""
     def __init__(self,values):
         self.values = values
     def match(self,args):
         return unifyArrays(args,self.values)
 
 class YPFail(object):
+    """Iterator that always stops."""
     def __iter__(self):
         return self
     def next(self):
@@ -85,6 +99,7 @@ class YPFail(object):
         pass
 
 class YPSuccess(object):
+    """Iterator that produces a result once and then stops."""
     def __init__(self):
         self._done = False
     def __iter__(self):
@@ -99,11 +114,15 @@ class YPSuccess(object):
         pass
 
 def getValue(v):
+    """Return the value of a Prolog term. Constants and functors will return themselves,
+    variables will be expanded if bound. Does not recursively expand variables."""
     if isinstance(v,Variable):
         return v.getValue()
     return v
 
 def unify(term1,term2):
+    """Tries to unify term1 and term2. After unification, variables in the terms will be bound.
+    """
     arg1 = getValue(term1)
     arg2 = getValue(term2)
     # print "Unify:\n\t", term1,"\n\t", term2
@@ -118,6 +137,7 @@ def unify(term1,term2):
             return YPFail()
 
 def unifyArrays(array1,array2):
+    """Unifies two lists of terms."""
     if len(array1) != len(array2):
         return
     iterators = [None]*len(array1)
@@ -140,6 +160,7 @@ def unifyArrays(array1,array2):
 
 
 class YP(object):
+    """The YieldProlog engine."""
     def __init__(self):
         self._atomStore = {}
         self._predicatesStore = {}
@@ -161,31 +182,54 @@ class YP(object):
         self.ATOM_NIL = self.atom("[]")
         self.ATOM_DOT = self.atom(".")
     def atom(self,name,module=None):
+        """Create an atom with name name in this engine. The parameter module is ignored and
+        present to be compatible with the output from the modified YieldProlog compiler.
+        """
         self._atomStore.setdefault(name,Atom(name))
         return self._atomStore[name]
     def variable(self):
+        """Create a variable in this engine."""
         return Variable()
     def functor(self,name,args):
+        """Create a functor in this engine with name name and the list of Prolog terms args
+        as the functor arguments."""
         return Functor(name,args)
     def functor1(self,name,arg):
+        """Compatibility function for creating a functor with one argument."""
         return Functor(name,[arg])
     def functor2(self,name,arg1,arg2):
+        """Compatibility function for creating a functor with two arguments."""
         return Functor(name,[arg1,arg2])
     def functor3(self,name,arg1,arg2,arg3):
+        """Compatibility function for creating a functor with three arguments."""
         return Functor(name,[arg1,arg2,arg3])
     def listpair(self,head,tail):
+        """Creates a Prolog listpair representing [head|tail]. An empty list is
+        represented by the ATOM_NIL object member.
+        Example:
+            yp = YP()
+            prologlist = yp.listpair(yp.atom('a'),yp.listpair(yp.atom('b'),yp.ATOM_NIL))
+        """
         return Functor(self.ATOM_DOT,[head,tail])
     def makelist(self,l):
+        """Creates a Prolog list from a Python list. l is a list of Prolog terms."""
         r = reduce( lambda x,y: self.listpair(y,x), reversed(l), self.ATOM_NIL )
         return r
 
     def loadScript(self,fn):
+        """Loads a compiled Prolog program. Any functions defined in this program will be
+        available to the engine and can be used in queries.
+        """
         execfile(fn,self.evalContext)
         # TODO: raise YPEngineException if loading fails
         # print "Loaded script"
         #for k,v in self.evalContext.items():
         #    print "\t%s -> %s" % (k,v)
     def registerFunction(self,name,func):
+        """Makes the function func available to the engine with name name. This can be used
+        to call custom functions. These function will have to behave as Prolog functions, i.e.
+        they will need to yield boolean values.
+        """
         self.evalContext[name] = func
 
     def _findPredicates(self,name,arity):
@@ -198,7 +242,9 @@ class YP(object):
         self._predicatesStore[(name.name(),arity)] = clauses
 
     def assertFact(self,name,values):
-        """assert values at the end of the set of facts for the predicate with the
+        """From the original YieldProlog:
+
+        assert values at the end of the set of facts for the predicate with the
         name "name" and the arity len(values).
         "name" must be an Atom.
         values cannot contain unbound variables.
@@ -211,6 +257,19 @@ class YP(object):
         clauses.append(Answer(values))
         self._updatePredicate(name,len(values),clauses)
     def query(self,name,args):
+        """Creates a Prolog query for the symbol name, with arguments args. name is a string,
+        args is a list of Prolog terms. The query will only be constructed, but not evaluated.
+        Returns a Python generator of boolean values.
+        
+        Example:
+
+        yp = YP()
+        yp.assertFact(yp.atom('cat'),[yp.atom('tom')])
+        V1 = yp.variable()
+        q = yp.query('cat',[V1])
+        r = [ V1.getValue() for r in q ]
+        assert r == [ yp.atom('tom') ]
+        """
         try:
             if name not in self.evalBlacklist:
                 function = self.evalContext[name]
@@ -222,20 +281,23 @@ class YP(object):
 
         try:
             clauses = self._findPredicates(name,len(values))
-        except Exception,e:
+        except Exception,e: # TODO: make this a more specific exception
             pass
-        # check if name is a defined fact or a defined clause
-        # print self.evalContext
-        # print self._predicatesStore
-        # print self._atomStore
         return self.matchDynamic(self.atom(name),args)
 
     def evaluateBounded(self,query,projection_function,recursion_limit=200):
-        """evaluate a query, but limit the recursion depth to recursion_limit. If a query causes a
-        recursion that goes too deep, the query will be aborted and the results so far will be
-        returned.
+        """Evaluates a query, but limits the recursion depth to recursion_limit. If a query
+        causes a recursion that is too deep, the query will be aborted and the results collected
+        so far will be returned.
         projection_function is a function taking the generator value (False or True) and maps it
         to anything else, for example the value of an instantiated Variable.
+
+        yp = YP()
+        yp.assertFact(yp.atom('cat'),[yp.atom('tom')])
+        V1 = yp.variable()
+        q = yp.query('cat',[V1])
+        r = yp.evaluateBounded(q,(lambda x: V1.getValue()))
+        assert r == [ yp.atom('tom') ]
         """
         old_recursionlimit = sys.getrecursionlimit()
         result = []
@@ -253,18 +315,17 @@ class YP(object):
         return result
 
     def matchDynamic(self,name,args):
-        """
+        """From the original YieldProlog:
+
         Match all clauses of the dynamic predicate with the name and with arity the length
         of the arguments.
         "name" must be an atom
         Returns an iterator.
         """
-        pass
         clauses = self._findPredicates(name,len(args))
+        return self._matchAllClauses(clauses, args)
 
-        return self.matchAllClauses(clauses, args)
-
-    def matchAllClauses(self,clauses,args):
+    def _matchAllClauses(self,clauses,args):
         for clause in clauses:
             for cut in clause.match(args):
                 yield False
