@@ -15,6 +15,10 @@ class Atom(IUnifiable):
         self._name = name
     def name(self):
         return self._name
+    def toPython(self):
+        if self._name == '[]':
+            return []
+        return self._name
     def __str__(self):
         return "atom(%s)" % self._name
     def unify(self,term):
@@ -43,6 +47,11 @@ class Variable(IUnifiable):
         if isinstance(self._value,Variable):
             return self._value.getValue()
         return self._value
+    def toPython(self):
+        v = self.getValue()
+        if isinstance(v,Variable):
+            return None
+        return v.toPython()
     def __str__(self):
         if self._isBound:
             return "var(%s)" % self._value
@@ -71,6 +80,14 @@ class Functor(IUnifiable):
         """
         self._name = name
         self._args = args
+    def toPython(self):
+        if self._name == ".":
+            # listpair
+            args = [self._args[0].toPython()] + self._args[1].toPython()
+            return args
+        else:
+            args = [ v.toPython() for v in self._args ]
+            return (self._name,args)
     def __str__(self):
         args = ",".join([str(a) for a in self._args])
         return "%s(%s)" % (self._name,args)
@@ -174,6 +191,8 @@ class YP(object):
     def __init__(self):
         self._atomStore = {}
         self._predicatesStore = {}
+        self.ATOM_NIL = self.atom("[]")
+        self.ATOM_DOT = "."
         self.evalContext = {
                 '__builtins__': {},
                 'variable': self.variable,
@@ -184,14 +203,13 @@ class YP(object):
                 'functor3': self.functor3,
                 'listpair': self.listpair,
                 'makelist': self.makelist,
+                'ATOM_NIL': self.ATOM_NIL,
                 'unify': unify,
                 'matchDynamic': self.matchDynamic,
                 'True': True,
                 'False': False,
         }
         self.evalBlacklist = self.evalContext.keys()
-        self.ATOM_NIL = self.atom("[]")
-        self.ATOM_DOT = self.atom(".")
     def atom(self,name,module=None):
         """Create an atom with name name in this engine. The parameter module is ignored and
         present to be compatible with the output from the modified YieldProlog compiler.
