@@ -2485,7 +2485,7 @@ def compileTerm(arg1, arg2, arg3):
   for _ in [1]:
     _State = arg2
     for l2 in YP.unify(arg1, Atom.NIL):
-      for l3 in YP.unify(arg3, Functor1("var", Atom.a("Atom.NIL"))):
+      for l3 in YP.unify(arg3, Functor1("var", Atom.a("ATOM_NIL"))):
         yield True
         return
       if doBreak:
