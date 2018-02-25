@@ -51,7 +51,7 @@ class Variable(IUnifiable):
         v = self.getValue()
         if isinstance(v,Variable):
             return None
-        return v.toPython()
+        return toPython(v)
     def __str__(self):
         if self._isBound:
             return "var(%s)" % self._value
@@ -83,10 +83,10 @@ class Functor(IUnifiable):
     def toPython(self):
         if self._name == ".":
             # listpair
-            args = [self._args[0].toPython()] + self._args[1].toPython()
+            args = [toPython(self._args[0])] + toPython(self._args[1])
             return args
         else:
-            args = [ v.toPython() for v in self._args ]
+            args = [ toPython(v) for v in self._args ]
             return (self._name,args)
     def __str__(self):
         args = ",".join([str(a) for a in self._args])
@@ -145,6 +145,12 @@ def getValue(v):
     variables will be expanded if bound. Does not recursively expand variables."""
     if isinstance(v,Variable):
         return v.getValue()
+    return v
+
+def toPython(v):
+    """Return v as a Python data structure."""
+    if isinstance(v,IUnifiable):
+        return v.toPython()
     return v
 
 def unify(term1,term2):
