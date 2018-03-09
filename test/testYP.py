@@ -300,6 +300,13 @@ class TestYP(unittest.TestCase):
             (yp.atom('cyan'),yp.atom('magenta'),yp.atom('yellow'))
         ]))
 
+    def testQueryWithoutPredicates(self):
+        yp = YP()
+        v1 = yp.variable()
+        q = yp.query('nonexistentpred',[v1])
+        r = list(q)
+        self.assertEqual(r,[])
+
 if __name__=="__main__":
     unittest.main()
 

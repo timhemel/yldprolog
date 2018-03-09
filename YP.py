@@ -326,10 +326,6 @@ class YP(object):
         except TypeError,e: # args not matching
             pass
 
-        try:
-            clauses = self._findPredicates(name,len(args))
-        except YPException,e:
-            pass
         return self.matchDynamic(self.atom(name),args)
 
     def evaluateBounded(self,query,projection_function,recursion_limit=200):
@@ -369,8 +365,11 @@ class YP(object):
         "name" must be an atom
         Returns an iterator.
         """
-        clauses = self._findPredicates(name.name(),len(args))
-        return self._matchAllClauses(clauses, args)
+        try:
+            clauses = self._findPredicates(name.name(),len(args))
+            return self._matchAllClauses(clauses, args)
+        except YPException:
+            return YPFail()
 
     def _matchAllClauses(self,clauses,args):
         for clause in clauses:
