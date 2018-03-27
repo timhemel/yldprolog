@@ -307,6 +307,15 @@ class TestYP(unittest.TestCase):
         r = list(q)
         self.assertEqual(r,[])
 
+    def testLoadScriptsWithDependenciesOutOfOrder(self):
+        yp = YP()
+        yp.loadScript('mainscript.py',overwrite=False)
+        yp.loadScript('subscript.py',overwrite=False)
+        v1 = yp.variable()
+        q = yp.query('main', [v1])
+        r = [ v1.getValue() for x in q ]
+        self.assertEqual(r,['yes','no','maybe'])
+
 if __name__=="__main__":
     unittest.main()
 
