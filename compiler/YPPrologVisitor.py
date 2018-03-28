@@ -10,18 +10,23 @@ class NumeralTerm(Term):
         self.num = s
     def __str__(self):
         return self.num
-
-class StringTerm(Term):
-    def __init__(self,s):
-        self.string = s
-    def __str__(self):
-        return self.string
+    def generate(self,generator):
+        return generator.generateNumber(self)
 
 class VariableTerm(Term):
     def __init__(self,s):
         self.varname = s
     def __str__(self):
         return self.varname
+
+class ListTerm(Term):
+    def __init__(self,l):
+        self.items = l
+    def __str__(self):
+        return "[%s]" % ",".join([ str(x) for x in self.items ])
+    def generate(self,generator):
+        return generator.generateList(self)
+
 
 class Atom:
     def __init__(self,value):
@@ -37,6 +42,8 @@ class Functor:
         self.args = args
     def __str__(self):
         return "%s(%s)" % (str(self.name),",".join([str(a) for a in self.args]))
+    def generate(self,generator):
+        return generator.generateFunctor(self)
 
 class Clause:
     def __init__(self,head,body):
@@ -73,12 +80,12 @@ class YPPrologVisitor(prologVisitor):
         pass
 
     def visitPredicate(self,ctx):
-        atom = ctx.ATOM().getText()
+        atom = Atom(ctx.ATOM().getText())
         if ctx.termlist():
             termlist = self.visitTermlist(ctx.termlist())
             return Functor(atom,termlist)
         else:
-            return Atom(atom)
+            return atom
 
     def visitTermlist(self,ctx):
         term = self.visitTerm(ctx.term())
@@ -89,12 +96,9 @@ class YPPrologVisitor(prologVisitor):
         return [ term ] + termlist
     def visitTerm(self,ctx):
         if ctx.NUMERAL() != None:
-            return ctx.NUMERAL().getText()
+            return NumeralTerm(ctx.NUMERAL().getText())
         if ctx.STRING() != None:
-            return ctx.STRING().getText()
-        if ctx.VARIABLE() != None:
-            variable = ctx.VARIABLE().getText()
-            return variable
+            return Atom(ctx.STRING().getText())
         if ctx.BINOP() != None:
             lterm = self.visitTerm(ctx.term(0))
             rterm = self.visitTerm(ctx.term(1))
@@ -102,6 +106,17 @@ class YPPrologVisitor(prologVisitor):
         if ctx.predicate() != None:
             predicate = self.visitPredicate(ctx.predicate())
             return predicate
+        if ctx.termlist() != None:
+            if ctx.VARIABLE() != None:
+                # list head,tail
+                pass
+            else:
+                # list with just terms
+                termlist = self.visitTermlist(ctx.termlist())
+                return ListTerm(termlist)
+        if ctx.VARIABLE() != None:
+            variable = VariableTerm(ctx.VARIABLE().getText())
+            return variable
         if ctx.term() != None:
             term = self.visitTerm(ctx.term())
             return term

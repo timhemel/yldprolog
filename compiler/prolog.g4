@@ -73,6 +73,8 @@ term
     // | UNOP term
     | term BINOP term
     | '(' term ')'
+    | '[' termlist ']'
+    | '[' termlist '|' VARIABLE ']'
     ;
 
 /*
