@@ -2,6 +2,11 @@
 
 from prologVisitor import prologVisitor
 
+class PredicateList:
+    def __init__(self,head,tail):
+        self.head = head
+        self.tail = tail
+
 class Term:
     pass
 
@@ -10,6 +15,8 @@ class NumeralTerm(Term):
         self.num = s
     def __str__(self):
         return self.num
+    def getVariables(self):
+        return []
     def generate(self,generator):
         return generator.generateNumber(self)
 
@@ -18,12 +25,18 @@ class VariableTerm(Term):
         self.varname = s
     def __str__(self):
         return self.varname
+    def getVariables(self):
+        return [ self.varname ]
+    def generate(self,generator):
+        return generator.generateVariable(self)
 
 class ListTerm(Term):
     def __init__(self,l):
         self.items = l
     def __str__(self):
         return "[%s]" % ",".join([ str(x) for x in self.items ])
+    def getVariables(self):
+        return reduce(lambda x,y: x + y, [ v.getVariables() for v in self.items ], [])
     def generate(self,generator):
         return generator.generateList(self)
 
@@ -33,6 +46,8 @@ class Atom:
         self.value = value
     def __str__(self):
         return repr(self.value)
+    def getVariables(self):
+        return []
     def generate(self,generator):
         return generator.generateAtom(self)
 
@@ -42,6 +57,8 @@ class Functor:
         self.args = args
     def __str__(self):
         return "%s(%s)" % (str(self.name),",".join([str(a) for a in self.args]))
+    def getVariables(self):
+        return reduce(lambda x,y: x + y, [ v.getVariables() for v in self.args ], [])
     def generate(self,generator):
         return generator.generateFunctor(self)
 
@@ -65,19 +82,27 @@ class YPPrologVisitor(prologVisitor):
         if ctx.predicatelist():
             rhs = self.visitPredicatelist(ctx.predicatelist())
         else:
-            rhs = []
+            rhs = None
         # add to clauselist
         # clause(lhs/len(rhs))
         # print lhs
         c = Clause(lhs,rhs)
         # print c
-        self.clauses.setdefault((lhs.name,len(lhs.args)),[]).append(c)
+        self.clauses.setdefault((lhs.name.value,len(lhs.args)),[]).append(c)
         # print self.clauses
         if rhs:
             return 'bla'
         else:
             return 'fact'
         pass
+
+    def visitPredicatelist(self,ctx):
+        predicateterm = self.visitPredicateterm(ctx.predicateterm())
+        if ctx.predicatelist():
+            predicatelist = self.visitPredicatelist(ctx.predicatelist())
+        else:
+            predicatelist = None
+        return PredicateList(predicateterm,predicatelist)
 
     def visitPredicate(self,ctx):
         atom = Atom(ctx.ATOM().getText())
