@@ -37,13 +37,16 @@ program
     ;
 
 clauselist 
-    :  clause*
+    :  (clause|directive)*
     ;
 
 clause 
     : (predicate '.')
     | (predicate ':-' predicatelist '.')
     ;
+
+directive
+    : ':-' predicate '.' ;
 
 predicatelist 
     :  predicateterm | predicateterm ',' predicatelist
@@ -69,6 +72,7 @@ term
     : NUMERAL
     | STRING
     | predicate
+    | ATOM '/' NUMERAL
     | VARIABLE
     // | UNOP term
     | term BINOP term
