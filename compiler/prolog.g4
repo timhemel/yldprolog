@@ -83,12 +83,14 @@ query
     ;
 */
 
-ATOM 
-    : LCLETTER CHARACTER*
-    ;
 
 VARIABLE 
     : UCLETTER CHARACTER*
+    | '_'
+    ;
+
+ATOM 
+    : LCLETTER CHARACTER*
     ;
 
 NUMERAL 

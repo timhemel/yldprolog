@@ -30,6 +30,11 @@ class VariableTerm(Term):
     def generate(self,generator):
         return generator.generateVariable(self)
 
+class AnonymousVariableTerm(VariableTerm):
+    def __init__(self,num):
+        self.num = num
+        self.varname = 'x'+str(self.num+1)
+
 class ListTerm(Term):
     def __init__(self,l):
         self.items = l
@@ -74,6 +79,7 @@ class YPPrologVisitor(prologVisitor):
     def __init__(self):
         prologVisitor.__init__(self)
         self.clauses = {}
+        self.anonymousVariableCounter = 0
     def visitProgram(self,ctx):
         self.visitChildren(ctx)
         return self.clauses
@@ -140,7 +146,12 @@ class YPPrologVisitor(prologVisitor):
                 termlist = self.visitTermlist(ctx.termlist())
                 return ListTerm(termlist)
         if ctx.VARIABLE() != None:
-            variable = VariableTerm(ctx.VARIABLE().getText())
+            varname = ctx.VARIABLE().getText()
+            if varname == '_':
+                variable = AnonymousVariableTerm(self.anonymousVariableCounter)
+                self.anonymousVariableCounter += 1
+            else:
+                variable = VariableTerm(varname)
             return variable
         if ctx.term() != None:
             term = self.visitTerm(ctx.term())
