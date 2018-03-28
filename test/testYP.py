@@ -325,6 +325,20 @@ class TestYP(unittest.TestCase):
         r = [ v1.getValue() for x in q ]
         self.assertEqual(r,[yp.atom('yes'),yp.atom('no'),yp.atom('maybe')])
 
+    def testLoadClausesWithFunctors(self):
+        yp = YP()
+        yp.loadScript('geometricobjects.py',overwrite=False)
+        Y = yp.variable()
+        q = yp.query('vertical', [
+            yp.functor('seg', [
+                yp.functor('point',[1,1]),
+                yp.functor('point',[2,Y])
+            ])
+        ])
+        r = [ Y.getValue() for x in q ]
+        self.assertEquals(r,[1])
+
+ 
 if __name__=="__main__":
     unittest.main()
 
