@@ -41,26 +41,42 @@ clauselist
     ;
 
 clause 
-    : (predicate '.')
-    | (predicate ':-' predicatelist '.')
+    : (simplepredicate '.')
+    | (simplepredicate ':-' predicateterm '.')
     ;
 
 directive
-    : ':-' predicate '.' ;
+    : ':-' simplepredicate '.' ;
 
 predicatelist 
-    :  predicateterm | predicateterm ',' predicatelist
+    :  predicateterm
+    // :  predicateterm | predicateterm ',' predicatelist
     ;
 
-predicate 
-    : ATOM
-    | ATOM '(' termlist ')'
+simplepredicate 
+    : TRUE
+    | FAIL
+    // | atom
+    | functor
     ;
+
+// TODO: atoms (functors with arity 0?)
+functor
+    : atom '(' termlist ')'
+    ;
+
+atom
+    : ATOM
+    | STRING
+    ;
+
 
 predicateterm
-    : predicate
-    | BOOL_UNOP predicate
-    | term BINOP term
+    : simplepredicate
+    | op='\\+' predicateterm
+    | predicateterm op=',' predicateterm
+    | predicateterm op=';' predicateterm
+    | '(' predicateterm ')'
     ;
 
 termlist 
@@ -70,13 +86,12 @@ termlist
 
 term 
     : NUMERAL
-    | STRING
-    | predicate
+    | atom
     | ATOM '/' NUMERAL
     | VARIABLE
     // | UNOP term
     | term BINOP term
-    | '(' term ')'
+    // | '(' term ')'
     | '[' termlist ']'
     | '[' termlist '|' VARIABLE ']'
     ;
@@ -86,6 +101,9 @@ query
     : '?-' predicatelist '.'
     ;
 */
+
+TRUE: 'true' ;
+FAIL: 'fail' ;
 
 
 VARIABLE 

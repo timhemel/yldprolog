@@ -8,6 +8,7 @@ class YPGenerator:
     def reset(self):
         self.s = ""
         self._indent = 0
+
     def generate(self,clauses):
         self.reset()
         for pred,rules in clauses.items():
@@ -56,28 +57,17 @@ class YPGenerator:
             self.dedent()
     def _emitPredicateBody(self,rules):
         for clause in rules:
-            self._emitVariableAssignments(clause.head.args)
-            boundVars = self.getVariablesFromList(clause.head.args)
-            if clause.body == None:
-                self._emitUnifyWithArgs(clause.head.args,[],0)
+            print clause
+            self._emitVariableAssignments(clause.head.args())
+            boundVars = self.getVariablesFromList(clause.head.args())
+            if isinstance(clause.body,TruePredicate):
+                self._emitUnifyWithArgs(clause.head.args(),[],0)
             else:
                 self._emitClauseBody(clause.body,boundVars,0)
     def _emitClauseBody(self,body,boundVars,depth):
-        loopvar = self.getLoopVar(depth)
-        functorName = body.head.name
-        functorArgs = ",".join([ a.generate(self) for a in body.head.args ])
-        allVars = self.getVariables(body.head)
-        unboundVars = self.getUnboundVars(allVars,boundVars)
-        self._emitVariableDeclarations(unboundVars)
-        s = 'for %s in query(%s,[%s]):\n' % (loopvar, functorName, functorArgs)
-        self._emit(s)
-        self.indent()
-        if body.tail != None:
-            self._emitClauseBody(body.tail,boundVars+unboundVars,depth+1)
-        else:
-            self._emit("yield False\n")
-        self.dedent()
-
+        print body
+        body.generate(self,boundVars,depth)
+        # self._emit(s)
     def _emitVariableDeclarations(self,variables):
         for v in variables:
             self._emitVariableDeclaration(v)
@@ -103,4 +93,28 @@ class YPGenerator:
         return "functor(%s,[%s])" % (functor.name, ",".join(args))
     def generateNumber(self,number):
         return number.num
+    def generatePredicate(self,pred,boundVars,depth):
+        loopvar = self.getLoopVar(depth)
+        functorName = pred.functor.name
+        functorArgs = ",".join([ a.generate(self) for a in pred.functor.args ])
+        allVars = self.getVariables(pred.functor)
+        unboundVars = self.getUnboundVars(allVars,boundVars)
+        self._emitVariableDeclarations(unboundVars)
+        s = 'for %s in query(%s,[%s]):\n' % (loopvar, functorName, functorArgs)
+        self._emit(s)
+        self.indent()
+        #if body.tail != None:
+        #    self._emitClauseBody(body.tail,boundVars+unboundVars,depth+1)
+        #else:
+        #    self._emit("yield False\n")
+        self._emit("yield False\n")
+        self.dedent()
+    def generateConjunctionPredicate(self,pred,boundVars,depth):
+        pred.lhs.generate(self,boundVars,depth)
+        self.indent()
+        # TODO: bound vars
+        pred.rhs.generate(self,boundVars,depth)
+        self.dedent()
+
+
 
