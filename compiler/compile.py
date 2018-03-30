@@ -20,9 +20,6 @@ def main(argv):
     generator = YPPythonCodeGenerator()
     pythoncode = generator.generate(code)
     print pythoncode
-    # generator = YPGenerator()
-    # lines = generator.generate(clauses)
-    # print lines
 
 if __name__=="__main__":
     main(sys.argv)

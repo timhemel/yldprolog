@@ -119,7 +119,7 @@ class YPPrologVisitor(prologVisitor):
             rhs = TruePredicate()
         c = Clause(lhs,rhs)
         # print c
-        print lhs.functor
+        # print lhs.functor
         self.clauses.setdefault((lhs.name(),len(lhs.args())),[]).append(c)
         # print self.clauses
 
@@ -161,7 +161,10 @@ class YPPrologVisitor(prologVisitor):
 
     def visitFunctor(self,ctx):
         atom = self.visitAtom(ctx.atom())
-        termlist = self.visitTermlist(ctx.termlist())
+        if ctx.termlist() != None:
+            termlist = self.visitTermlist(ctx.termlist())
+        else:
+            termlist = []
         return Functor(atom,termlist)
 
     def visitTermlist(self,ctx):
@@ -177,6 +180,9 @@ class YPPrologVisitor(prologVisitor):
         if ctx.atom() != None:
             atom = self.visitAtom(ctx.atom())
             return atom
+        if ctx.functor() != None:
+            functor = self.visitFunctor(ctx.functor())
+            return functor
         if ctx.BINOP() != None:
             lterm = self.visitTerm(ctx.term(0))
             rterm = self.visitTerm(ctx.term(1))

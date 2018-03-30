@@ -13,6 +13,12 @@ class YPCodeVar:
     def generate(self,generator):
         return generator.generateVar(self)
 
+class YPCodeValue:
+    def __init__(self,val):
+        self.val = val
+    def generate(self,generator):
+        return generator.generateValue(self)
+
 class YPCodeList:
     def __init__(self,l):
         self.l = l
@@ -141,6 +147,12 @@ class YPPrologCompiler:
             return YPCodeCall('atom',[YPCodeExpr(expr.value)])
         if isinstance(expr,VariableTerm):
             return YPCodeVar(expr.varname)
+        if isinstance(expr,Functor):
+            args = [ self.compileExpression(a) for a in expr.args ]
+            return YPCodeCall('functor',[ YPCodeExpr(expr.name.value), YPCodeList(args) ])
+        if isinstance(expr,NumeralTerm):
+            return YPCodeValue(expr.num)
+        print "UNK EXPR", expr,repr(expr)
     def compileClauseHeadVariableArguments(self,args):
         # gets all arguments that are variables from args
         code = []
@@ -207,6 +219,8 @@ class YPPythonCodeGenerator:
         return repr(expr.expr)
     def generateList(self,expr):
         return "[" + ",".join( [ v.generate(self) for v in expr.l ] ) + "]"
+    def generateValue(self,expr):
+        return expr.val
     def _getLoopVar(self):
         return 'l'+str(self.loopLevel+1)
     def _enterLoop(self):

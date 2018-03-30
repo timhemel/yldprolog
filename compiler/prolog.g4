@@ -62,7 +62,8 @@ simplepredicate
 
 // TODO: atoms (functors with arity 0?)
 functor
-    : atom '(' termlist ')'
+    : atom
+    | atom '(' termlist ')'
     ;
 
 atom
@@ -87,6 +88,7 @@ termlist
 term 
     : NUMERAL
     | atom
+    | functor
     | ATOM '/' NUMERAL
     | VARIABLE
     // | UNOP term
