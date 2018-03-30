@@ -5,9 +5,17 @@ class YPCodeExpr:
     def __init__(self,expr):
         self.expr = expr
     def __str__(self):
-        return self.expr
+        return repr(self.expr)
     def generate(self,generator):
         return generator.generateExpr(self)
+
+class YPCodeVar:
+    def __init__(self,name):
+        self.name = name
+    def __str__(self):
+        return self.name
+    def generate(self,generator):
+        return generator.generateVar(self)
 
 class YPCodeAssign:
     def __init__(self,lhs,rhs):
@@ -75,10 +83,10 @@ class YPPrologCompiler:
             funcs.append(self.compileFunction(func,body))
         return YPCodeProgram(funcs)
     def compileFunctionBody(self,clause):
-        code = []
-        declVars = self.getVariablesFromClauseHeadArguments(clause.head.args())
-        code.append( self.compileVariableAssignments(declVars) )
-        self.pushBoundVars([v[0] for v in declVars ])
+        # code = []
+        # declVars = self.getVariablesFromClauseHeadArguments(clause.head.args())
+        # code.append( self.compileVariableAssignments(declVars) )
+        # self.pushBoundVars([v[0] for v in declVars ])
         # :- true. (or empty body)
         if isinstance(clause.body,TruePredicate):
             # declare free variables
@@ -88,6 +96,7 @@ class YPPrologCompiler:
             # unify
             return self.compileArgListUnification(clause.head.functor.args)
         else:
+            print clause.body
             # compile body
             # iterate
             pass
@@ -114,7 +123,7 @@ class YPPrologCompiler:
             code = self.compileUnification(argvar,functorargs[i-1],code)
         return code
     def compileUnification(self,var,val,code):
-        return YPCodeForeach(YPCodeCall('unify',[YPCodeExpr(var),self.compileExpression(val)]), code)
+        return YPCodeForeach(YPCodeCall('unify',[YPCodeVar(var),self.compileExpression(val)]), code)
     def compileExpression(self,expr):
         if isinstance(expr,Atom):
             return YPCodeCall('atom',[YPCodeExpr(expr.value)])
@@ -167,6 +176,8 @@ class YPPythonCodeGenerator:
         return s
     def generateYieldFalse(self,yf):
         return self.l("yield False")
+    def generateVar(self,var):
+        return var.name
     def generateExpr(self,expr):
         return repr(expr.expr)
     def _getLoopVar(self):
