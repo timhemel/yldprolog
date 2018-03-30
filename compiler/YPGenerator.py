@@ -4,29 +4,29 @@ from YPPrologVisitor import *
 class YPCodeExpr:
     def __init__(self,expr):
         self.expr = expr
-    def __str__(self):
-        return repr(self.expr)
     def generate(self,generator):
         return generator.generateExpr(self)
 
 class YPCodeVar:
     def __init__(self,name):
         self.name = name
-    def __str__(self):
-        return self.name
     def generate(self,generator):
         return generator.generateVar(self)
+
+class YPCodeList:
+    def __init__(self,l):
+        self.l = l
+    def generate(self,generator):
+        return generator.generateList(self)
 
 class YPCodeAssign:
     def __init__(self,lhs,rhs):
         self.lhs = lhs
         self.rhs = rhs
-    def __str__(self):
-        return "%s = %s" % (self.lhs,self.rhs)
+    def generate(self,generator):
+        return generator.generateAssign(self)
 
 class YPCodeYieldFalse:
-    def __str__(self):
-        return "yield False"
     def generate(self,generator):
         return generator.generateYieldFalse(self)
 
@@ -34,8 +34,6 @@ class YPCodeForeach:
     def __init__(self,loopExpression,loopCode):
         self.loopExpression = loopExpression
         self.loopCode = loopCode
-    def __str__(self):
-        return "foreach %s { %s }" % (self.loopExpression,self.loopCode)
     def generate(self,generator):
         return generator.generateForeach(self)
 
@@ -43,8 +41,6 @@ class YPCodeCall:
     def __init__(self,func,args):
         self.func = func
         self.args = args
-    def __str__(self):
-        return "%s(%s)" % (self.func,self.args)
     def generate(self,generator):
         return generator.generateCall(self)
 
@@ -53,16 +49,12 @@ class YPCodeFunction:
         self.name = name
         self.args = args
         self.body = body
-    def __str__(self):
-        return "def %s(%s) {\n\t%s\n}" % (self.name,self.args,[str(line) for line in self.body])
     def generate(self,generator):
         return generator.generateFunction(self)
 
 class YPCodeProgram:
     def __init__(self,functions):
         self.functions = functions
-    def __str__(self):
-        return "\n".join([str(f) for f in self.functions])
     def generate(self,generator):
         return generator.generateProgram(self)
 
@@ -79,12 +71,12 @@ class YPPrologCompiler:
     def compileProgram(self,program):
         funcs = []
         for func,clauses in program.items():
-            body = [ self.compileFunctionBody(c) for c in clauses ]
+            body = reduce(lambda x,y: x+y, [ self.compileFunctionBody(c) for c in clauses ], [] )
             funcs.append(self.compileFunction(func,body))
         return YPCodeProgram(funcs)
     def compileFunctionBody(self,clause):
         # code = []
-        # declVars = self.getVariablesFromClauseHeadArguments(clause.head.args())
+        headVarArguments = self.compileClauseHeadVariableArguments(clause.head.functor.args)
         # code.append( self.compileVariableAssignments(declVars) )
         # self.pushBoundVars([v[0] for v in declVars ])
         # :- true. (or empty body)
@@ -94,13 +86,11 @@ class YPPrologCompiler:
             # freeVars = self.getUnboundVariables(allVars)
             # code.append(self.compileVariableDeclarations(freeVars))
             # unify
-            return self.compileArgListUnification(clause.head.functor.args)
+            b = self.compileArgListUnification(clause.head.functor.args)
         else:
-            print clause.body
-            # compile body
-            # iterate
-            pass
-        return code
+            b = self.compileBody(clause.body)
+        # return b
+        return headVarArguments + [ b ]
     def compileFunction(self,func,body):
         funcargs = [ self.getArgumentVariable(i) for i in range(func[1]) ]
         return YPCodeFunction(func[0],funcargs,body)
@@ -116,6 +106,28 @@ class YPPrologCompiler:
         for v in variables:
             code.append(self.compileVariableAssignment(v,'variable()'))
         return code
+
+    def compileBody(self,body):
+        # :- A,B
+        if isinstance(body,ConjunctionPredicate):
+            # if A is simple
+            if isinstance(body.lhs,Predicate):
+                coderhs = self.compileBody(body.rhs)
+                return self.compilePredicate(body.lhs, coderhs)
+            elif isinstance(body.lhs,ConjunctionPredicate): # A is complex
+                return self.compileBody(
+                        ConjunctionPredicate(body.lhs.lhs, ConjunctionPredicate(body.lhs.rhs,body.rhs))
+                )
+        # :- functor(...)
+        if isinstance(body,Predicate):
+            code = self.compilePredicate(body,YPCodeYieldFalse())
+            return code
+        print "UNK", body
+    def compilePredicate(self,pred,code):
+        args = [ self.compileExpression(a) for a in pred.functor.args ]
+        return YPCodeForeach(YPCodeCall('query',[YPCodeExpr(pred.functor.name.value),YPCodeList(args)]),code)
+        
+
     def compileArgListUnification(self,functorargs,argindex=0):
         code = YPCodeYieldFalse()
         for i in range(len(functorargs),0,-1):
@@ -127,6 +139,15 @@ class YPPrologCompiler:
     def compileExpression(self,expr):
         if isinstance(expr,Atom):
             return YPCodeCall('atom',[YPCodeExpr(expr.value)])
+        if isinstance(expr,VariableTerm):
+            return YPCodeVar(expr.varname)
+    def compileClauseHeadVariableArguments(self,args):
+        # gets all arguments that are variables from args
+        code = []
+        for i in range(len(args)):
+            if isinstance(args[i],VariableTerm):
+                code.append( YPCodeAssign(YPCodeVar(args[i]),YPCodeVar(self.getArgumentVariable(i))) )
+        return code
     def getArgumentVariable(self,i):
         return "arg"+str(i+1)
     def getLoopVariable(self):
@@ -153,8 +174,8 @@ class YPPythonCodeGenerator:
     def generate(self,code):
         return code.generate(self)
     def generateProgram(self,program):
-        funcs = [ func.generate(self) for func in program.functions]
-        return "\n".join(funcs)
+        funcs = [ func.generate(self) + self.nl() for func in program.functions]
+        return self.lines(*funcs)
     def generateFunction(self,func):
         funcargs = ",".join(func.args)
         s = self.l("def %s(%s):" % (func.name, funcargs))
@@ -167,7 +188,9 @@ class YPPythonCodeGenerator:
         expression = loop.loopExpression.generate(self)
         s = self.l("for %s in %s:" % (loopVar,expression))
         self.indent()
+        self._enterLoop()
         code = loop.loopCode.generate(self)
+        self._leaveLoop()
         self.dedent()
         return self.lines(s, code)
     def generateCall(self,call):
@@ -176,10 +199,14 @@ class YPPythonCodeGenerator:
         return s
     def generateYieldFalse(self,yf):
         return self.l("yield False")
+    def generateAssign(self,assign):
+        return self.l("%s = %s" % (assign.lhs.generate(self),assign.rhs.generate(self)))
     def generateVar(self,var):
         return var.name
     def generateExpr(self,expr):
         return repr(expr.expr)
+    def generateList(self,expr):
+        return "[" + ",".join( [ v.generate(self) for v in expr.l ] ) + "]"
     def _getLoopVar(self):
         return 'l'+str(self.loopLevel+1)
     def _enterLoop(self):
@@ -194,127 +221,11 @@ class YPPythonCodeGenerator:
         return " "*self.tabwidth*self.indentation+s
     def lines(self,*args):
         return "\n".join(args)
+    def nl(self):
+        return "\n"
 
 
 
-
-
-
-
-
-
-class YPGenerator:
-    def __init__(self):
-        self.reset()
-        self._tabwidth=2
-    def reset(self):
-        self.s = ""
-        self._indent = 0
-
-    def generate(self,clauses):
-        self.reset()
-        for pred,rules in clauses.items():
-            self._emitPredicateDefinition(pred)
-            self.indent()
-            self._emitPredicateBody(rules)
-            self.dedent()
-            self._emit('\n')
-        return self.output()
-    def getArgVar(self,i):
-        return 'arg'+str(i+1)
-    def getLoopVar(self,i):
-        return 'l'+str(i+1)
-    def _createVarListOfLength(self,n):
-        l = [ self.getArgVar(i) for i in range(n) ]
-        return ",".join(l)
-    def getVariables(self,v):
-        return v.getVariables()
-    def getVariablesFromList(self,l):
-        return reduce(lambda x,y: x + y, [ self.getVariables(v) for v in l ], [])
-    def getUnboundVars(self,allVars,boundVars):
-        return list(set([ v for v in allVars if v not in boundVars ]))
-    def _emitPredicateDefinition(self,head):
-        varlist = self._createVarListOfLength(head[1])
-        s = "def %s(%s):\n" % (head[0],varlist)
-        self._emit(s)
-    def _emitVariableAssignments(self,args):
-        for i in range(len(args)):
-            if isinstance(args[i],VariableTerm):
-                self._emit('%s = %s\n' % (args[i],self.getArgVar(i)))
-    def _emitUnifyWithArgs(self,args,boundVars,argpos):
-        if args == []:
-            self._emit("yield False\n")
-        else:
-            # unify loopvar with args[0]
-            allVars = self.getVariables(args[0])
-            unboundVars = self.getUnboundVars(allVars,boundVars)
-            self._emitVariableDeclarations(unboundVars)
-            loopvar = self.getLoopVar(argpos)
-            argvar = self.getArgVar(argpos) # 'x'+str(argpos)
-            argval = args[0].generate(self)
-            s = "for %s in unify(%s, %s):\n" % (loopvar,argvar,argval)
-            self._emit(s)
-            self.indent()
-            self._emitUnifyWithArgs(args[1:],boundVars+unboundVars,argpos+1)
-            self.dedent()
-    def _emitPredicateBody(self,rules):
-        for clause in rules:
-            self._emitVariableAssignments(clause.head.args())
-            boundVars = self.getVariablesFromList(clause.head.args())
-            if isinstance(clause.body,TruePredicate):
-                self._emitUnifyWithArgs(clause.head.args(),[],0)
-            else:
-                self._emitClauseBody(clause.body,boundVars,0)
-    def _emitClauseBody(self,body,boundVars,depth):
-        body.generate(self,boundVars,depth)
-        # self._emit(s)
-    def _emitVariableDeclarations(self,variables):
-        for v in variables:
-            self._emitVariableDeclaration(v)
-    def _emitVariableDeclaration(self,v):
-        self._emit('%s = variable()\n' % v)
-    def _emit(self,s):
-        self.s += self._indent * self._tabwidth * ' ' + s
-    def indent(self,n=1):
-        self._indent += n
-    def dedent(self,n=1):
-        self._indent -= n
-    def output(self):
-        return self.s
-    def generateAtom(self,atom):
-        return "atom(%s)" % repr(atom.value)
-    def generateVariable(self,var):
-        return var.varname
-    def generateList(self,listTerm):
-        l = [ x.generate(self) for x in listTerm.items ]
-        return "makelist([%s])" % ",".join(l)
-    def generateFunctor(self,functor):
-        args = [ x.generate(self) for x in functor.args ]
-        return "functor(%s,[%s])" % (functor.name, ",".join(args))
-    def generateNumber(self,number):
-        return number.num
-    def generatePredicate(self,pred,boundVars,depth):
-        loopvar = self.getLoopVar(depth)
-        functorName = pred.functor.name
-        functorArgs = ",".join([ a.generate(self) for a in pred.functor.args ])
-        allVars = self.getVariables(pred.functor)
-        unboundVars = self.getUnboundVars(allVars,boundVars)
-        self._emitVariableDeclarations(unboundVars)
-        s = 'for %s in query(%s,[%s]):\n' % (loopvar, functorName, functorArgs)
-        self._emit(s)
-        self.indent()
-        #if body.tail != None:
-        #    self._emitClauseBody(body.tail,boundVars+unboundVars,depth+1)
-        #else:
-        #    self._emit("yield False\n")
-        self._emit("yield False\n")
-        self.dedent()
-    def generateConjunctionPredicate(self,pred,boundVars,depth):
-        pred.lhs.generate(self,boundVars,depth)
-        self.indent()
-        # TODO: bound vars
-        pred.rhs.generate(self,boundVars,depth)
-        self.dedent()
 
 
 
