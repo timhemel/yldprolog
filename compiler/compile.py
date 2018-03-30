@@ -14,10 +14,12 @@ def main(argv):
     parser = prologParser(stream)
     tree = parser.program()
     visitor = YPPrologVisitor()
-    clauses = visitor.visit(tree)
-    generator = YPGenerator()
-    lines = generator.generate(clauses)
-    print lines
+    program = visitor.visit(tree)
+    compiler = YPPrologCompiler()
+    code = compiler.compileProgram(program)
+    # generator = YPGenerator()
+    # lines = generator.generate(clauses)
+    # print lines
 
 if __name__=="__main__":
     main(sys.argv)

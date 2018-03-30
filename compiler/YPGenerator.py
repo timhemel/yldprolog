@@ -1,6 +1,82 @@
 
 from YPPrologVisitor import *
 
+
+
+class YPPrologCompiler:
+    def __init__(self):
+        self.boundVars = [ [] ]
+    def pushBoundVars(self,variables):
+        self.boundVars.append(variables)
+    def popBoundVars(self):
+        self.boundVars.pop()
+    def getUnboundVariables(self,variables):
+        return list(set([ v for v in variables if v not in self.boundVars[-1] ]))
+    def compileProgram(self,program):
+        code = []
+        for func,clauses in program.items():
+            body = [ self.compileFunctionBody(c) for c in clauses ]
+            code.append(self.compileFunction(func,body))
+        return code    
+    def compileFunctionBody(self,clause):
+        code = []
+        declVars = self.getVariablesFromClauseHeadArguments(clause.head.args())
+        code.append( self.compileVariableAssignments(declVars) )
+        self.pushBoundVars([v[0] for v in declVars ])
+        print clause.body
+        # :- true. (or empty body)
+        if isinstance(clause.body,TruePredicate):
+            # declare free variables
+            allVars = self.getVariablesFromArgumentList(clause.head.args())
+            freeVars = self.getUnboundVariables(allVars)
+            code.append(self.compileVariableDeclarations(freeVars))
+            # unify
+            code.append(self.compileUnification(clause.head.functor))
+        else:
+            # compile body
+            # iterate
+            pass
+        return code
+    def compileFunction(self,func,body):
+        code = []
+        print func
+        print body
+        pass
+        return code
+    def compileVariableAssignments(self,variablesWithValues):
+        code = []
+        for var,val in variablesWithValues:
+            code.append(self.compileVariableAssignment(var,val))
+        return code
+    def compileVariableAssignment(self,var,val):
+        return '%s = %s' % (var,val)
+    def compileVariableDeclarations(self,variables):
+        code = []
+        for v in variables:
+            code.append(self.compileVariableAssignment(v,'variable()'))
+        return code
+    def compileUnification(self,functor):
+        for i in range(functor.args):
+            a = functor.args[i]
+            loopvar = self.getLoopVariable(i) # TODO: offset
+            self.code.append(self.compileArgumentUnification(a,loopvar))
+        pass
+    def getArgumentVariable(self,i):
+        return "arg"+str(i+1)
+    def getLoopVariable(self,i):
+        return "l"+str(i+1)
+    def getVariablesFromClauseHeadArguments(self,args):
+        # gets all arguments that are variables from args
+        variables = []
+        for i in range(len(args)):
+            if isinstance(args[i],VariableTerm):
+                variables.append( (args[i],self.getArgumentVariable(i)) )
+        return variables
+    def getVariablesFromArgumentList(self,args):
+        # gets all variables that are used in an argument list
+        return reduce(lambda x,y: x + y, [ v.getVariables() for v in args ], [])
+
+
 class YPGenerator:
     def __init__(self):
         self.reset()
