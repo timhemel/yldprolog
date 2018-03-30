@@ -17,6 +17,9 @@ def main(argv):
     program = visitor.visit(tree)
     compiler = YPPrologCompiler()
     code = compiler.compileProgram(program)
+    generator = YPPythonCodeGenerator()
+    pythoncode = generator.generate(code)
+    print pythoncode
     # generator = YPGenerator()
     # lines = generator.generate(clauses)
     # print lines
