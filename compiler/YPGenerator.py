@@ -138,18 +138,21 @@ class YPPrologCompiler:
                         ConjunctionPredicate(body.lhs.lhs, ConjunctionPredicate(body.lhs.rhs,body.rhs))
                 )
             elif isinstance(body.lhs,DisjunctionPredicate):
-                # ( A ; B ) , C   ->  A,C ; B,C
+                # ( A ; B ) , C   =>  A,C ; B,C
                 return self.compileBody(
                         DisjunctionPredicate(
                             ConjunctionPredicate(body.lhs.lhs,body.rhs),
                             ConjunctionPredicate(body.lhs.rhs,body.rhs)
                         )
                 )
+            # true , A  =>  A
+            elif isinstance(body.lhs,TruePredicate):
+                return self.compileBody(body.rhs)
         elif isinstance(body,DisjunctionPredicate):
             codelhs = self.compileBody(body.lhs)
             coderhs = self.compileBody(body.rhs)
             return codelhs + coderhs
-        # :- functor(...)   A -> A, true
+        # :- functor(...)   A => A, true
         elif isinstance(body,Predicate):
             return self.compileBody(ConjunctionPredicate(body, TruePredicate()))
         # :- true
@@ -159,7 +162,6 @@ class YPPrologCompiler:
         print "UNK", body
     def compilePredicate(self,pred,code):
         args = [ self.compileExpression(a) for a in pred.functor.args ]
-        # TODO: free variables
         return [ YPCodeForeach(YPCodeCall('query',[YPCodeExpr(pred.functor.name.value),YPCodeList(args)]),code) ]
         
 
