@@ -149,10 +149,9 @@ class YPPrologCompiler:
             codelhs = self.compileBody(body.lhs)
             coderhs = self.compileBody(body.rhs)
             return codelhs + coderhs
-        # :- functor(...)
+        # :- functor(...)   A -> A, true
         elif isinstance(body,Predicate):
-            code = self.compilePredicate(body,[YPCodeYieldFalse()])
-            return code
+            return self.compileBody(ConjunctionPredicate(body, TruePredicate()))
         # :- true
         elif isinstance(body,TruePredicate):
             # TODO: ? return, return True, yield False (depending on state)
