@@ -76,6 +76,7 @@ predicateterm
     : simplepredicate
     | op='\\+' predicateterm
     | predicateterm op=',' predicateterm
+    | predicateterm op='->' predicateterm
     | predicateterm op=';' predicateterm
     | '(' predicateterm ')'
     ;

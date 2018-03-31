@@ -79,6 +79,23 @@ class YPCodeFunction:
     def generate(self,generator):
         return generator.generateFunction(self)
 
+class YPCodeBreakableBlock:
+    def __init__(self,label,body):
+        """label is a string,
+        body is a list of YPCode statements
+        """
+        self.label = label
+        self.body = body
+    def generate(self,generator):
+        return generator.generateBreakableBlock(self)
+
+class YPCodeBreakBlock:
+    def __init__(self,label):
+        """label is a string"""
+        self.label = label
+    def generate(self,generator):
+        return generator.generateBreakBlock(self)
+
 class YPCodeProgram:
     def __init__(self,functions):
         """functions is a list of YPCodeFunction objects."""
@@ -91,6 +108,7 @@ class YPPrologCompiler:
     def __init__(self):
         self.boundVars = [ [] ]
         self.headArgsByPos = []
+        self.cutIfCounter = 0
     def pushBoundVars(self,variables):
         self.boundVars.append(self.boundVars[-1] + variables)
     def popBoundVars(self):
@@ -125,9 +143,7 @@ class YPPrologCompiler:
         self.popBoundVars()
         self.popBoundVars()
 
-        falseYieldCode = [ YPCodeIf(YPCodeExpr(False),[YPCodeYieldFalse()]) ]
-
-        return headVarArguments + freeVarDeclarationCodeHead + freeVarDeclarationCodeBody + argListUnificationCode + falseYieldCode
+        return headVarArguments + freeVarDeclarationCodeHead + freeVarDeclarationCodeBody + argListUnificationCode
     def compileFunction(self,func,body):
         funcargs = [ self.getArgumentVariable(i) for i in range(func[1]) ]
         return YPCodeFunction(func[0],funcargs,body)
@@ -146,41 +162,109 @@ class YPPrologCompiler:
 
     def compileBody(self,body):
         # :- A,B
+        print "# DEBUG", body
         if isinstance(body,ConjunctionPredicate):
             # if A is simple
             if isinstance(body.lhs,Predicate):
-                coderhs = self.compileBody(body.rhs)
-                return self.compilePredicate(body.lhs, coderhs)
+                if body.lhs.functor.name.value == '$CUTIF':
+                    print "# $CUTIF, A"
+                    label = body.lhs.functor.args[0].value
+                    codeA = self.compileBody(body.rhs)
+                    codeB = [ YPCodeBreakBlock(label) ]
+                    return codeA + codeB
+                else:
+                    print "# A,B"
+                    coderhs = self.compileBody(body.rhs)
+                    return self.compilePredicate(body.lhs, coderhs)
             elif isinstance(body.lhs,ConjunctionPredicate): # A is complex
+                print "# (A,B),C => A,(B,C)"
                 return self.compileBody(
                         ConjunctionPredicate(body.lhs.lhs, ConjunctionPredicate(body.lhs.rhs,body.rhs))
                 )
             elif isinstance(body.lhs,DisjunctionPredicate):
+                # (A -> T ; B ), C  =>  A -> (T,C) ; B, C
+                if isinstance(body.lhs.lhs,IfThenPredicate):
+                    print "# (A -> T ; B ), C  =>  A -> (T,C) ; B, C"
+                    return self.compileBody(
+                        DisjunctionPredicate(
+                            IfThenPredicate(
+                                body.lhs.lhs.condition,
+                                ConjunctionPredicate(body.lhs.lhs.action,body.rhs)
+                            ),
+                            ConjunctionPredicate(body.lhs.rhs,body.rhs)
+                        )
+                    )
                 # ( A ; B ) , C   =>  A,C ; B,C
-                return self.compileBody(
+                else:
+                    print "# ( A ; B ) , C   =>  A,C ; B,C"
+                    return self.compileBody(
                         DisjunctionPredicate(
                             ConjunctionPredicate(body.lhs.lhs,body.rhs),
                             ConjunctionPredicate(body.lhs.rhs,body.rhs)
                         )
-                )
+                    )
+            elif isinstance(body.lhs,IfThenPredicate):
+                print "# (A -> T), B  =>  (A -> T ; fail), B"
+                print "#", body.lhs, body.rhs
+                # (A -> T), B  =>  (A -> T ; fail), B
+                return self.compileBody(
+                        ConjunctionPredicate(
+                            DisjunctionPredicate(
+                                IfThenPredicate(body.lhs.condition,body.lhs.action),
+                                FailPredicate()
+                            ),
+                            body.rhs
+                        ))
             # true , A  =>  A
             elif isinstance(body.lhs,TruePredicate):
+                print "# true , A => A"
                 return self.compileBody(body.rhs)
             elif isinstance(body.lhs,FailPredicate):
+                print "# fail , _ "
                 return []
         elif isinstance(body,DisjunctionPredicate):
-            codelhs = self.compileBody(body.lhs)
-            coderhs = self.compileBody(body.rhs)
-            return codelhs + coderhs
+            # A -> T ; B     =>   breakableblock (  A , $CUTIF(CutIfLabel) , T ; B )
+            if isinstance(body.lhs,IfThenPredicate):
+                print "# A -> T ; B  => breakableBlock( ... )"
+                cutIfLabel = self.getCutIfLabel()
+                code = self.compileBody(
+                    DisjunctionPredicate(
+                        ConjunctionPredicate(
+                            body.lhs.condition,
+                            ConjunctionPredicate(
+                                Predicate(Functor(Atom("$CUTIF"),[Atom(cutIfLabel)])),
+                                body.lhs.action
+                            )
+                        ),
+                        body.rhs
+                    )
+                )
+                return [ YPCodeBreakableBlock(cutIfLabel,code) ]
+            else:
+                # else:  A ; B
+                print "# A ; B"
+                codelhs = self.compileBody(body.lhs)
+                coderhs = self.compileBody(body.rhs)
+                return codelhs + coderhs
+        elif isinstance(body,IfThenPredicate):
+            print "# [A  =>  A, true]  A -> T => (A -> T), true"
+            return self.compileBody(ConjunctionPredicate(body, TruePredicate()))
         # :- functor(...)   A => A, true
         elif isinstance(body,Predicate):
-            return self.compileBody(ConjunctionPredicate(body, TruePredicate()))
+            if body.functor.name.value == '$CUTIF':
+                print "# $CUTIF", body.functor.args
+                return [ self.YPCodeBreakBlock(body.functor.args[0].value) ]
+            else:
+                print "# [A  =>  A, true]  A => A, true"
+                return self.compileBody(ConjunctionPredicate(body, TruePredicate()))
         # :- fail
         elif isinstance(body,FailPredicate):
+            print "# [A  =>  A, true]  fail => fail, true"
             return self.compileBody(ConjunctionPredicate(body, TruePredicate()))
         # :- true
         elif isinstance(body,TruePredicate):
             # TODO: ? return, return True, yield False (depending on state)
+            print "# true"
             return [ YPCodeYieldFalse() ]
         print "UNK", body
     def compilePredicate(self,pred,code):
@@ -231,6 +315,10 @@ class YPPrologCompiler:
         return "arg"+str(i+1)
     def getLoopVariable(self):
         return "l"+str(self.looplevel+1)
+    def getCutIfLabel(self):
+        self.cutIfCounter += 1
+        return "cutIf"+str(self.cutIfCounter)
+
     def getVariablesFromClauseHeadArguments(self,args):
         # gets all arguments that are variables from args
         variables = []
@@ -266,11 +354,17 @@ class YPPythonCodeGenerator:
         funcargs = ",".join(func.args)
         s = self.l("def %s(%s):" % (func.name, funcargs))
         self.indent()
-        # parts = [ p.generate(self) for p in func.body ]
+        # TODO: check if the code has breakable blocks, if so, generate "ugly code" here
+        # the ugly code doesn't hurt, generate it anyway
+        unsetBreakCode = self.l("doBreak = False")
+        wrapCode = self.l("for _ in [1]:")
+        self.indent()
         code = self.generateCodeList(func.body)
         self.dedent()
-        # return self.lines(s,*parts)
-        return self.lines(s, code)
+        # breakCode = self.generateBreakCode() # level <= 1, not needed
+        falseYieldCode = self.generateCodeList( [ YPCodeIf(YPCodeExpr(False),[YPCodeYieldFalse()]) ])
+        self.dedent()
+        return self.lines(s, unsetBreakCode, wrapCode, code, falseYieldCode)
     def generateIf(self,ifstatement):
         conditionCode = ifstatement.condition.generate(self)
         trueCode = self.generateCodeList(ifstatement.trueCode)
@@ -291,10 +385,15 @@ class YPPythonCodeGenerator:
         s = self.l("for %s in %s:" % (loopVar,expression))
         self.indent()
         self._enterLoop()
-        code = self.generateCodeList(loop.loopCode)
+        if loop.loopCode == []:
+            code = [ self.l("pass") ]
+        else:
+            code = self.generateCodeList(loop.loopCode)
         self._leaveLoop()
         self.dedent()
-        return self.lines(s, code)
+        # if doBreak
+        breakCode = self.generateBreakCode()
+        return self.lines(s, code, breakCode)
     def generateCall(self,call):
         # TODO: check if functionname is a reserved word
         args = ",".join([ a.generate(self) for a in call.args ])
@@ -304,6 +403,40 @@ class YPPythonCodeGenerator:
         return self.l("yield False")
     def generateAssign(self,assign):
         return self.l("%s = %s" % (assign.lhs.generate(self),assign.rhs.generate(self)))
+    def generateBreakableBlock(self, bb):
+        # label = False
+        lines = [ self.l("%s = False" % bb.label) ]
+        ## if body != []
+        # for _ in [1]:
+        if bb.body != []:
+            lines.append( self.l("for _ in [1]:") )
+            self.indent()
+        #      {{ body }}
+            lines.extend( [ c.generate(self) for c in bb.body ] )
+            self.dedent()
+        ## endif
+        #   if label:
+        lines.append(self.l("if %s:" % bb.label))
+        self.indent()
+        #      doBreak = False
+        lines.append(self.l("doBreak = False"))
+        self.dedent()
+        #   if doBreak:
+        #     break
+        breakCode = self.generateBreakCode()
+        lines.append( breakCode )
+        return self.lines(*lines)
+    def generateBreakBlock(self,bb):
+        lines = [ self.l("%s = True" % bb.label) ]
+        lines.append( self.l("doBreak = True") )
+        lines.append( self.l("break") )
+        return self.lines(*lines)
+    def generateBreakCode(self):
+        lines = [ self.l("if doBreak:") ]
+        self.indent()
+        lines.append(self.l("break"))
+        self.dedent()
+        return self.lines(*lines)
     def generateVar(self,var):
         return var.name
     def generateExpr(self,expr):

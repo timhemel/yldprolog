@@ -15,10 +15,14 @@ class PredicateAnd:
 class TruePredicate:
     def getVariables(self):
         return []
+    def __str__(self):
+        return "true"
 
 class FailPredicate:
     def getVariables(self):
         return []
+    def __str__(self):
+        return "fail"
 
 class Predicate:
     def __init__(self,functor):
@@ -29,6 +33,8 @@ class Predicate:
         return self.functor.args
     def getVariables(self):
         return self.functor.getVariables()
+    def __str__(self):
+        return str(self.functor)
 
 class ConjunctionPredicate:
     def __init__(self,lhs,rhs):
@@ -36,6 +42,8 @@ class ConjunctionPredicate:
         self.rhs = rhs
     def getVariables(self):
         return self.lhs.getVariables() + self.rhs.getVariables()
+    def __str__(self):
+        return "( %s , %s )" % (str(self.lhs),str(self.rhs))
 
 class DisjunctionPredicate:
     def __init__(self,lhs,rhs):
@@ -43,6 +51,17 @@ class DisjunctionPredicate:
         self.rhs = rhs
     def getVariables(self):
         return self.lhs.getVariables() + self.rhs.getVariables()
+    def __str__(self):
+        return "( %s ; %s )" % (str(self.lhs),str(self.rhs))
+
+class IfThenPredicate:
+    def __init__(self,condition,action):
+        self.condition = condition
+        self.action = action
+    def getVariables(self):
+        return self.condition.getVariables() + self.action.getVariables()
+    def __str__(self):
+        return "( %s -> %s )" % (str(self.condition),str(self.action))
 
 class Term:
     pass
@@ -150,6 +169,10 @@ class YPPrologVisitor(prologVisitor):
                 lhs = self.visitPredicateterm(ctx.predicateterm(0))
                 rhs = self.visitPredicateterm(ctx.predicateterm(1))
                 return ConjunctionPredicate(lhs,rhs)
+            if ctx.op.text == '->':
+                lhs = self.visitPredicateterm(ctx.predicateterm(0))
+                rhs = self.visitPredicateterm(ctx.predicateterm(1))
+                return IfThenPredicate(lhs,rhs)
             if ctx.op.text == ';':
                 lhs = self.visitPredicateterm(ctx.predicateterm(0))
                 rhs = self.visitPredicateterm(ctx.predicateterm(1))
