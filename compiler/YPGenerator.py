@@ -27,6 +27,9 @@ class YPCodeList:
 
 class YPCodeAssign:
     def __init__(self,lhs,rhs):
+        """lhs is an rhs assignment expression,
+        rhs is a YPCodeExpr.
+        """
         self.lhs = lhs
         self.rhs = rhs
     def generate(self,generator):
@@ -36,9 +39,21 @@ class YPCodeYieldFalse:
     def generate(self,generator):
         return generator.generateYieldFalse(self)
 
+class YPCodeIf:
+    def __init__(self,condition,trueCode,falseCode=[]):
+        """condition is a YPCodeExpr
+        trueCode is a list of YPCode statements
+        falseCode is a list of YPCode statements
+        """
+        self.condition = condition
+        self.trueCode = trueCode
+        self.falseCode = falseCode
+    def generate(self,generator):
+        return generator.generateIf(self)
+
 class YPCodeForeach:
     def __init__(self,loopExpression,loopCode):
-        """loopExpression is a YPCodeExpr, loopCode is a list of YPCode."""
+        """loopExpression is a YPCodeExpr, loopCode is a list of YPCode statements."""
         self.loopExpression = loopExpression
         self.loopCode = loopCode
     def generate(self,generator):
@@ -56,7 +71,7 @@ class YPCodeFunction:
     def __init__(self,name,args,body):
         """name is a string?
         args is a list of strings, with names of argument variables,
-        body is a list of YPCode
+        body is a list of YPCode statements
         """
         self.name = name
         self.args = args
@@ -66,6 +81,7 @@ class YPCodeFunction:
 
 class YPCodeProgram:
     def __init__(self,functions):
+        """functions is a list of YPCodeFunction objects."""
         self.functions = functions
     def generate(self,generator):
         return generator.generateProgram(self)
@@ -109,7 +125,9 @@ class YPPrologCompiler:
         self.popBoundVars()
         self.popBoundVars()
 
-        return headVarArguments + freeVarDeclarationCodeHead + freeVarDeclarationCodeBody + argListUnificationCode
+        falseYieldCode = [ YPCodeIf(YPCodeExpr(False),[YPCodeYieldFalse()]) ]
+
+        return headVarArguments + freeVarDeclarationCodeHead + freeVarDeclarationCodeBody + argListUnificationCode + falseYieldCode
     def compileFunction(self,func,body):
         funcargs = [ self.getArgumentVariable(i) for i in range(func[1]) ]
         return YPCodeFunction(func[0],funcargs,body)
@@ -148,12 +166,17 @@ class YPPrologCompiler:
             # true , A  =>  A
             elif isinstance(body.lhs,TruePredicate):
                 return self.compileBody(body.rhs)
+            elif isinstance(body.lhs,FailPredicate):
+                return []
         elif isinstance(body,DisjunctionPredicate):
             codelhs = self.compileBody(body.lhs)
             coderhs = self.compileBody(body.rhs)
             return codelhs + coderhs
         # :- functor(...)   A => A, true
         elif isinstance(body,Predicate):
+            return self.compileBody(ConjunctionPredicate(body, TruePredicate()))
+        # :- fail
+        elif isinstance(body,FailPredicate):
             return self.compileBody(ConjunctionPredicate(body, TruePredicate()))
         # :- true
         elif isinstance(body,TruePredicate):
@@ -248,6 +271,20 @@ class YPPythonCodeGenerator:
         self.dedent()
         # return self.lines(s,*parts)
         return self.lines(s, code)
+    def generateIf(self,ifstatement):
+        conditionCode = ifstatement.condition.generate(self)
+        trueCode = self.generateCodeList(ifstatement.trueCode)
+        falseCode = self.generateCodeList(ifstatement.falseCode)
+        lines = [ self.l("if %s:" % conditionCode) ]
+        self.indent()
+        lines.append(self.l(trueCode))
+        self.dedent()
+        if falseCode:
+            lines.append(self.l("else:"))
+            self.indent()
+            lines.append(self.l(falseCode))
+            self.dedent()
+        return self.lines(*lines)
     def generateForeach(self,loop):
         loopVar = self._getLoopVar()
         expression = loop.loopExpression.generate(self)
