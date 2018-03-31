@@ -205,7 +205,18 @@ class YPPrologVisitor(prologVisitor):
             return term
     def visitAtom(self,ctx):
         if ctx.STRING() != None:
-            return Atom(ctx.STRING().getText())
+            us = self.unquoteString(ctx.STRING().getText())
+            return Atom(us)
         if ctx.ATOM() != None:
             return Atom(ctx.ATOM().getText())
+    def unquoteString(self,s):
+        i = 1 # skip first quote
+        r = ""
+        while i < len(s) -1:
+            if s[i] == '\\':
+                i += 1
+            else:
+                r += s[i]
+                i += 1
+        return r
 
