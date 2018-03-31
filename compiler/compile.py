@@ -8,7 +8,7 @@ from YPPrologVisitor import *
 from YPGenerator import *
 
 def main(argv):
-    inp = FileStream(argv[1])
+    inp = FileStream(argv[1],encoding='utf8')
     lexer = prologLexer(inp)
     stream = CommonTokenStream(lexer)
     parser = prologParser(stream)
