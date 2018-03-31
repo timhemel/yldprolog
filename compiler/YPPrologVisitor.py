@@ -85,8 +85,6 @@ class Functor:
     def __str__(self):
         return "%s(%s)" % (str(self.name),",".join([str(a) for a in self.args]))
     def getVariables(self):
-        # print [ v.getVariables() for v in self.args ]
-        # print reduce(lambda x,y: x + y, [ v.getVariables() for v in self.args ], [])
         return reduce(lambda x,y: x + y, [ v.getVariables() for v in self.args ], [])
 
 class Clause:
@@ -112,10 +110,7 @@ class YPPrologVisitor(prologVisitor):
         else:
             rhs = TruePredicate()
         c = Clause(lhs,rhs)
-        # print c
-        # print lhs.functor
         self.clauses.setdefault((lhs.name(),len(lhs.args())),[]).append(c)
-        # print self.clauses
 
     def visitPredicatelist(self,ctx):
         predicateterm = self.visitPredicateterm(ctx.predicateterm())
@@ -152,6 +147,9 @@ class YPPrologVisitor(prologVisitor):
                 lhs = self.visitPredicateterm(ctx.predicateterm(0))
                 rhs = self.visitPredicateterm(ctx.predicateterm(1))
                 return DisjunctionPredicate(lhs,rhs)
+        # else: ( predicateterm )
+        if ctx.predicateterm() != None:
+            return self.visitPredicateterm(ctx.predicateterm(0))
 
     def visitFunctor(self,ctx):
         atom = self.visitAtom(ctx.atom())
