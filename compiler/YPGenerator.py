@@ -38,6 +38,7 @@ class YPCodeYieldFalse:
 
 class YPCodeForeach:
     def __init__(self,loopExpression,loopCode):
+        """loopExpression is a YPCodeExpr, loopCode is a list of YPCode."""
         self.loopExpression = loopExpression
         self.loopCode = loopCode
     def generate(self,generator):
@@ -45,6 +46,7 @@ class YPCodeForeach:
 
 class YPCodeCall:
     def __init__(self,func,args):
+        """func is a string, args a list of YPCodeExpr"""
         self.func = func
         self.args = args
     def generate(self,generator):
@@ -52,6 +54,10 @@ class YPCodeCall:
 
 class YPCodeFunction:
     def __init__(self,name,args,body):
+        """name is a string?
+        args is a list of strings, with names of argument variables,
+        body is a list of YPCode
+        """
         self.name = name
         self.args = args
         self.body = body
@@ -103,7 +109,7 @@ class YPPrologCompiler:
         self.popBoundVars()
         self.popBoundVars()
 
-        return headVarArguments + freeVarDeclarationCodeHead + freeVarDeclarationCodeBody + [ argListUnificationCode ]
+        return headVarArguments + freeVarDeclarationCodeHead + freeVarDeclarationCodeBody + argListUnificationCode
     def compileFunction(self,func,body):
         funcargs = [ self.getArgumentVariable(i) for i in range(func[1]) ]
         return YPCodeFunction(func[0],funcargs,body)
@@ -131,19 +137,31 @@ class YPPrologCompiler:
                 return self.compileBody(
                         ConjunctionPredicate(body.lhs.lhs, ConjunctionPredicate(body.lhs.rhs,body.rhs))
                 )
+            elif isinstance(body.lhs,DisjunctionPredicate):
+                # ( A ; B ) , C   ->  A,C ; B,C
+                return self.compileBody(
+                        DisjunctionPredicate(
+                            ConjunctionPredicate(body.lhs.lhs,body.rhs),
+                            ConjunctionPredicate(body.lhs.rhs,body.rhs)
+                        )
+                )
+        elif isinstance(body,DisjunctionPredicate):
+            codelhs = self.compileBody(body.lhs)
+            coderhs = self.compileBody(body.rhs)
+            return codelhs + coderhs
         # :- functor(...)
-        if isinstance(body,Predicate):
-            code = self.compilePredicate(body,YPCodeYieldFalse())
+        elif isinstance(body,Predicate):
+            code = self.compilePredicate(body,[YPCodeYieldFalse()])
             return code
         # :- true
-        if isinstance(body,TruePredicate):
+        elif isinstance(body,TruePredicate):
             # TODO: ? return, return True, yield False (depending on state)
-            return YPCodeYieldFalse()
+            return [ YPCodeYieldFalse() ]
         print "UNK", body
     def compilePredicate(self,pred,code):
         args = [ self.compileExpression(a) for a in pred.functor.args ]
         # TODO: free variables
-        return YPCodeForeach(YPCodeCall('query',[YPCodeExpr(pred.functor.name.value),YPCodeList(args)]),code)
+        return [ YPCodeForeach(YPCodeCall('query',[YPCodeExpr(pred.functor.name.value),YPCodeList(args)]),code) ]
         
 
     def compileArgListUnification(self,functorargs,bodycode):
@@ -154,7 +172,7 @@ class YPPrologCompiler:
                 code = self.compileUnification(argvar,functorargs[i-1],code)
         return code
     def compileUnification(self,var,val,code):
-        return YPCodeForeach(YPCodeCall('unify',[YPCodeVar(var),self.compileExpression(val)]), code)
+        return [ YPCodeForeach(YPCodeCall('unify',[YPCodeVar(var),self.compileExpression(val)]), code) ]
     def compileExpression(self,expr):
         if isinstance(expr,Atom):
             return YPCodeCall('atom',[YPCodeExpr(expr.value)])
@@ -210,7 +228,12 @@ class YPPythonCodeGenerator:
         self.tabwidth = 2
         self.indentation = 0
     def generate(self,code):
+        """code is a YPCode, output is a string"""
         return code.generate(self)
+    def generateCodeList(self,l):
+        parts = [ c.generate(self) for c in l ]
+        return self.lines(*parts)
+        # return reduce(lambda x,y: x+y, parts, [])
     def generateProgram(self,program):
         funcs = [ func.generate(self) + self.nl() for func in program.functions]
         return self.lines(*funcs)
@@ -219,16 +242,18 @@ class YPPythonCodeGenerator:
         funcargs = ",".join(func.args)
         s = self.l("def %s(%s):" % (func.name, funcargs))
         self.indent()
-        parts = [ p.generate(self) for p in func.body ]
+        # parts = [ p.generate(self) for p in func.body ]
+        code = self.generateCodeList(func.body)
         self.dedent()
-        return self.lines(s,*parts)
+        # return self.lines(s,*parts)
+        return self.lines(s, code)
     def generateForeach(self,loop):
         loopVar = self._getLoopVar()
         expression = loop.loopExpression.generate(self)
         s = self.l("for %s in %s:" % (loopVar,expression))
         self.indent()
         self._enterLoop()
-        code = loop.loopCode.generate(self)
+        code = self.generateCodeList(loop.loopCode)
         self._leaveLoop()
         self.dedent()
         return self.lines(s, code)

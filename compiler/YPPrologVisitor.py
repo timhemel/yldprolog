@@ -37,6 +37,13 @@ class ConjunctionPredicate:
     def getVariables(self):
         return self.lhs.getVariables() + self.rhs.getVariables()
 
+class DisjunctionPredicate:
+    def __init__(self,lhs,rhs):
+        self.lhs = lhs
+        self.rhs = rhs
+    def getVariables(self):
+        return self.lhs.getVariables() + self.rhs.getVariables()
+
 class Term:
     pass
 
