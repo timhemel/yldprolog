@@ -13,10 +13,12 @@ class PredicateAnd:
         self.rhs = rhs
 
 class TruePredicate:
-    pass
+    def getVariables(self):
+        return []
 
 class FailPredicate:
-    pass
+    def getVariables(self):
+        return []
 
 class Predicate:
     def __init__(self,functor):
@@ -25,15 +27,15 @@ class Predicate:
         return self.functor.name.value
     def args(self):
         return self.functor.args
-    def generate(self,generator,boundVars,depth):
-        return generator.generatePredicate(self,boundVars,depth)
+    def getVariables(self):
+        return self.functor.getVariables()
 
 class ConjunctionPredicate:
     def __init__(self,lhs,rhs):
         self.lhs = lhs
         self.rhs = rhs
-    def generate(self,generator,boundVars,depth):
-        return generator.generateConjunctionPredicate(self,boundVars,depth)
+    def getVariables(self):
+        return self.lhs.getVariables() + self.rhs.getVariables()
 
 class Term:
     pass
@@ -45,8 +47,6 @@ class NumeralTerm(Term):
         return self.num
     def getVariables(self):
         return []
-    def generate(self,generator):
-        return generator.generateNumber(self)
 
 class VariableTerm(Term):
     def __init__(self,s):
@@ -55,8 +55,6 @@ class VariableTerm(Term):
         return self.varname
     def getVariables(self):
         return [ self.varname ]
-    def generate(self,generator):
-        return generator.generateVariable(self)
 
 class AnonymousVariableTerm(VariableTerm):
     def __init__(self,num):
@@ -70,8 +68,6 @@ class ListTerm(Term):
         return "[%s]" % ",".join([ str(x) for x in self.items ])
     def getVariables(self):
         return reduce(lambda x,y: x + y, [ v.getVariables() for v in self.items ], [])
-    def generate(self,generator):
-        return generator.generateList(self)
 
 
 class Atom:
@@ -81,8 +77,6 @@ class Atom:
         return repr(self.value)
     def getVariables(self):
         return []
-    def generate(self,generator):
-        return generator.generateAtom(self)
 
 class Functor:
     def __init__(self,name,args):
@@ -91,9 +85,9 @@ class Functor:
     def __str__(self):
         return "%s(%s)" % (str(self.name),",".join([str(a) for a in self.args]))
     def getVariables(self):
+        # print [ v.getVariables() for v in self.args ]
+        # print reduce(lambda x,y: x + y, [ v.getVariables() for v in self.args ], [])
         return reduce(lambda x,y: x + y, [ v.getVariables() for v in self.args ], [])
-    def generate(self,generator):
-        return generator.generateFunctor(self)
 
 class Clause:
     def __init__(self,head,body):

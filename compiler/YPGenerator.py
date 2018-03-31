@@ -70,10 +70,10 @@ class YPPrologCompiler:
         self.boundVars = [ [] ]
         self.headArgsByPos = []
     def pushBoundVars(self,variables):
-        self.boundVars.append(variables)
+        self.boundVars.append(self.boundVars[-1] + variables)
     def popBoundVars(self):
         self.boundVars.pop()
-    def getFreeVariables(self,variables):
+    def filterFreeVariables(self,variables):
         return list(set([ v for v in variables if v not in self.boundVars[-1] ]))
     def compileProgram(self,program):
         funcs = []
@@ -84,8 +84,7 @@ class YPPrologCompiler:
     def compileFunctionBody(self,clause):
         # code = []
         headVarArguments = self.compileClauseHeadVariableArguments(clause.head.functor.args)
-        boundVars = self.boundVars[-1] + [ v for v in self.headArgsByPos if v != None ]
-        self.pushBoundVars(boundVars)
+        self.pushBoundVars( [ v for v in self.headArgsByPos if v != None ] )
         # code.append( self.compileVariableAssignments(declVars) )
         # self.pushBoundVars([v[0] for v in declVars ])
         # :- true. (or empty body)
@@ -100,11 +99,26 @@ class YPPrologCompiler:
         #else:
         #    b = self.compileBody(clause.body)
         # return b
-        freeVarDeclarationCode = self.compileFreeVariableDeclarations(clause.head.functor.args)
+
+        freeVarsHead = self.getFreeVariables(clause.head.functor)
+        self.compileFreeVariableDeclarations(freeVarsHead)
+        self.pushBoundVars(freeVarsHead)
+        freeVarDeclarationCodeHead = self.compileFreeVariableDeclarations(freeVarsHead)
+
+        freeVarsBody = self.getFreeVariables(clause.body)
+        self.compileFreeVariableDeclarations(freeVarsBody)
+        self.pushBoundVars(freeVarsBody)
+        freeVarDeclarationCodeBody = self.compileFreeVariableDeclarations(freeVarsBody)
+
+
         bodyCode = self.compileBody(clause.body)
         argListUnificationCode = self.compileArgListUnification(clause.head.functor.args, bodyCode)
+
         self.popBoundVars()
-        return headVarArguments + freeVarDeclarationCode + [ argListUnificationCode ]
+        self.popBoundVars()
+        self.popBoundVars()
+
+        return headVarArguments + freeVarDeclarationCodeHead + freeVarDeclarationCodeBody + [ argListUnificationCode ]
     def compileFunction(self,func,body):
         funcargs = [ self.getArgumentVariable(i) for i in range(func[1]) ]
         return YPCodeFunction(func[0],funcargs,body)
@@ -178,12 +192,11 @@ class YPPrologCompiler:
             else:
                 self.headArgsByPos.append(None)
         return code
-    def compileFreeVariableDeclarations(self,args):
+    def compileFreeVariableDeclarations(self,variables):
         # TODO: free variables
-        variables = self.getVariablesFromArgumentList(args)
-        freeVariables = self.getFreeVariables(variables)
-        print "AAAA",variables, freeVariables
-        code = [ self.compileVariableDeclaration(v) for v in freeVariables ]
+        # variables = self.getVariablesFromArgumentList(args)
+        # freeVariables = self.filterFreeVariables(variables)
+        code = [ self.compileVariableDeclaration(v) for v in variables ]
         return code
     def compileVariableDeclaration(self,var):
         return YPCodeAssign(YPCodeVar(var),YPCodeCall("variable",[]))
@@ -201,8 +214,9 @@ class YPPrologCompiler:
     def getVariablesFromArgumentList(self,args):
         # gets all variables that are used in an argument list
         return reduce(lambda x,y: x + y, [ v.getVariables() for v in args ], [])
-
-
+    def getFreeVariables(self,expr):
+        variables = expr.getVariables()
+        return self.filterFreeVariables(variables)
 
 
 class YPPythonCodeGenerator:
