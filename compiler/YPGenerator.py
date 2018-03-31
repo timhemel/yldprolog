@@ -68,11 +68,12 @@ class YPCodeProgram:
 class YPPrologCompiler:
     def __init__(self):
         self.boundVars = [ [] ]
+        self.headArgsByPos = []
     def pushBoundVars(self,variables):
         self.boundVars.append(variables)
     def popBoundVars(self):
         self.boundVars.pop()
-    def getUnboundVariables(self,variables):
+    def getFreeVariables(self,variables):
         return list(set([ v for v in variables if v not in self.boundVars[-1] ]))
     def compileProgram(self,program):
         funcs = []
@@ -83,20 +84,27 @@ class YPPrologCompiler:
     def compileFunctionBody(self,clause):
         # code = []
         headVarArguments = self.compileClauseHeadVariableArguments(clause.head.functor.args)
+        boundVars = self.boundVars[-1] + [ v for v in self.headArgsByPos if v != None ]
+        self.pushBoundVars(boundVars)
         # code.append( self.compileVariableAssignments(declVars) )
         # self.pushBoundVars([v[0] for v in declVars ])
         # :- true. (or empty body)
-        if isinstance(clause.body,TruePredicate):
+
+        #if isinstance(clause.body,TruePredicate):
             # declare free variables
             # allVars = self.getVariablesFromArgumentList(clause.head.args())
             # freeVars = self.getUnboundVariables(allVars)
             # code.append(self.compileVariableDeclarations(freeVars))
             # unify
-            b = self.compileArgListUnification(clause.head.functor.args)
-        else:
-            b = self.compileBody(clause.body)
+        #    b = self.compileArgListUnification(clause.head.functor.args)
+        #else:
+        #    b = self.compileBody(clause.body)
         # return b
-        return headVarArguments + [ b ]
+        freeVarDeclarationCode = self.compileFreeVariableDeclarations(clause.head.functor.args)
+        bodyCode = self.compileBody(clause.body)
+        argListUnificationCode = self.compileArgListUnification(clause.head.functor.args, bodyCode)
+        self.popBoundVars()
+        return headVarArguments + freeVarDeclarationCode + [ argListUnificationCode ]
     def compileFunction(self,func,body):
         funcargs = [ self.getArgumentVariable(i) for i in range(func[1]) ]
         return YPCodeFunction(func[0],funcargs,body)
@@ -128,17 +136,23 @@ class YPPrologCompiler:
         if isinstance(body,Predicate):
             code = self.compilePredicate(body,YPCodeYieldFalse())
             return code
+        # :- true
+        if isinstance(body,TruePredicate):
+            # TODO: ? return, return True, yield False (depending on state)
+            return YPCodeYieldFalse()
         print "UNK", body
     def compilePredicate(self,pred,code):
         args = [ self.compileExpression(a) for a in pred.functor.args ]
+        # TODO: free variables
         return YPCodeForeach(YPCodeCall('query',[YPCodeExpr(pred.functor.name.value),YPCodeList(args)]),code)
         
 
-    def compileArgListUnification(self,functorargs,argindex=0):
-        code = YPCodeYieldFalse()
+    def compileArgListUnification(self,functorargs,bodycode):
+        code = bodycode
         for i in range(len(functorargs),0,-1):
-            argvar = self.getArgumentVariable(i-1)
-            code = self.compileUnification(argvar,functorargs[i-1],code)
+            if self.headArgsByPos[i-1] == None:
+                argvar = self.getArgumentVariable(i-1)
+                code = self.compileUnification(argvar,functorargs[i-1],code)
         return code
     def compileUnification(self,var,val,code):
         return YPCodeForeach(YPCodeCall('unify',[YPCodeVar(var),self.compileExpression(val)]), code)
@@ -155,11 +169,24 @@ class YPPrologCompiler:
         print "UNK EXPR", expr,repr(expr)
     def compileClauseHeadVariableArguments(self,args):
         # gets all arguments that are variables from args
+        self.headArgsByPos = []
         code = []
         for i in range(len(args)):
             if isinstance(args[i],VariableTerm):
                 code.append( YPCodeAssign(YPCodeVar(args[i]),YPCodeVar(self.getArgumentVariable(i))) )
+                self.headArgsByPos.append(args[i].varname)
+            else:
+                self.headArgsByPos.append(None)
         return code
+    def compileFreeVariableDeclarations(self,args):
+        # TODO: free variables
+        variables = self.getVariablesFromArgumentList(args)
+        freeVariables = self.getFreeVariables(variables)
+        print "AAAA",variables, freeVariables
+        code = [ self.compileVariableDeclaration(v) for v in freeVariables ]
+        return code
+    def compileVariableDeclaration(self,var):
+        return YPCodeAssign(YPCodeVar(var),YPCodeCall("variable",[]))
     def getArgumentVariable(self,i):
         return "arg"+str(i+1)
     def getLoopVariable(self):
@@ -189,6 +216,7 @@ class YPPythonCodeGenerator:
         funcs = [ func.generate(self) + self.nl() for func in program.functions]
         return self.lines(*funcs)
     def generateFunction(self,func):
+        # TODO: check if functionname is a reserved word
         funcargs = ",".join(func.args)
         s = self.l("def %s(%s):" % (func.name, funcargs))
         self.indent()
@@ -206,6 +234,7 @@ class YPPythonCodeGenerator:
         self.dedent()
         return self.lines(s, code)
     def generateCall(self,call):
+        # TODO: check if functionname is a reserved word
         args = ",".join([ a.generate(self) for a in call.args ])
         s = "%s(%s)" % (call.func,args)
         return s
