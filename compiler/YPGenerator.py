@@ -82,23 +82,8 @@ class YPPrologCompiler:
             funcs.append(self.compileFunction(func,body))
         return YPCodeProgram(funcs)
     def compileFunctionBody(self,clause):
-        # code = []
         headVarArguments = self.compileClauseHeadVariableArguments(clause.head.functor.args)
         self.pushBoundVars( [ v for v in self.headArgsByPos if v != None ] )
-        # code.append( self.compileVariableAssignments(declVars) )
-        # self.pushBoundVars([v[0] for v in declVars ])
-        # :- true. (or empty body)
-
-        #if isinstance(clause.body,TruePredicate):
-            # declare free variables
-            # allVars = self.getVariablesFromArgumentList(clause.head.args())
-            # freeVars = self.getUnboundVariables(allVars)
-            # code.append(self.compileVariableDeclarations(freeVars))
-            # unify
-        #    b = self.compileArgListUnification(clause.head.functor.args)
-        #else:
-        #    b = self.compileBody(clause.body)
-        # return b
 
         freeVarsHead = self.getFreeVariables(clause.head.functor)
         self.compileFreeVariableDeclarations(freeVarsHead)
