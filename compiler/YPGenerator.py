@@ -187,6 +187,19 @@ class YPPrologCompiler:
                 print "# (!,A) => A [yieldBreak]"
                 codeA = self.compileBody(body.rhs)
                 return codeA + [ YPCodeYieldBreak() ]
+            elif isinstance(body.lhs,NegationPredicate):
+                # for semidetnoneout => if (!A) { B }
+                # else:
+                print "# ((\+ A),B) =>  (A -> fail ; true),B"
+                return self.compileBody(
+                    ConjunctionPredicate(
+                        DisjunctionPredicate(
+                            IfThenPredicate(body.lhs.pred,FailPredicate()),
+                            TruePredicate()
+                        ),
+                        body.rhs
+                    )
+                )
             elif isinstance(body.lhs,ConjunctionPredicate): # A is complex
                 print "# (A,B),C => A,(B,C)"
                 return self.compileBody(
@@ -268,6 +281,9 @@ class YPPrologCompiler:
             else:
                 print "# [A  =>  A, true]  A => A, true"
                 return self.compileBody(ConjunctionPredicate(body, TruePredicate()))
+        elif isinstance(body,NegationPredicate):
+            print "# [A  =>  A, true]  (\+ A) => (\+ A), true"
+            return self.compileBody(ConjunctionPredicate(body, TruePredicate()))
         # :- fail
         elif isinstance(body,FailPredicate):
             print "# [A  =>  A, true]  fail => fail, true"
@@ -308,7 +324,18 @@ class YPPrologCompiler:
             return YPCodeCall('functor',[ YPCodeExpr(expr.name.value), YPCodeList(args) ])
         if isinstance(expr,NumeralTerm):
             return YPCodeValue(expr.num)
+        if isinstance(expr,ListTerm):
+            return self.compileList(expr)
+        if isinstance(expr,ListPairTerm):
+            return YPCodeCall('listpair',[ self.compileExpression(expr.head), self.compileExpression(expr.tail) ])
         print "UNK EXPR", expr,repr(expr)
+    def compileList(self,expr):
+        print "# compileList:",expr
+        if expr.items == []:
+            return YPCodeVar('ATOM_NIL')
+        else:
+            return YPCodeCall('makelist',[ self.compileExpression(x) for x in expr.items ])
+            # return NIL
     def findClauseHeadVariableArguments(self,args):
         # gets all arguments that are variables from args
         self.headArgsByPos = []

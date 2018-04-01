@@ -1,0 +1,2 @@
+
+enemy(X) :- \+ friend(X).

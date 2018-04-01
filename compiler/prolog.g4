@@ -96,8 +96,9 @@ term
     // | UNOP term
     | term BINOP term
     // | '(' term ')'
-    | '[' termlist ']'
-    | '[' termlist '|' VARIABLE ']'
+    | LBRACK RBRACK
+    | LBRACK termlist RBRACK
+    | LBRACK termlist '|' VARIABLE RBRACK
     ;
 
 /*
@@ -127,10 +128,6 @@ fragment CHARACTER
     : LCLETTER | UCLETTER | DIGIT
     ;
 
-BOOL_UNOP
-    : '\\+'
-    ;
-
 /*
 UNOP
     : '-' | '+'
@@ -149,6 +146,14 @@ special
 
 STRING 
     : '\'' ( ~'\'' | '\\' '\'' )* '\''
+    ;
+
+LBRACK
+    : '['
+    ;
+
+RBRACK
+    : ']'
     ;
 
 fragment LCLETTER

@@ -69,6 +69,14 @@ class IfThenPredicate:
     def __str__(self):
         return "( %s -> %s )" % (str(self.condition),str(self.action))
 
+class NegationPredicate:
+    def __init__(self,pred):
+        self.pred = pred
+    def __str__(self):
+        return "( \\+ %s )" % str(self.pred)
+    def getVariables(self):
+        return self.pred.getVariables()
+
 class Term:
     pass
 
@@ -100,6 +108,15 @@ class ListTerm(Term):
         return "[%s]" % ",".join([ str(x) for x in self.items ])
     def getVariables(self):
         return reduce(lambda x,y: x + y, [ v.getVariables() for v in self.items ], [])
+
+class ListPairTerm(Term):
+    def __init__(self,head,tail):
+        self.head = head
+        self.tail = tail
+    def __str__(self):
+        return ". ( %s , %s )" % (self.head, self.tail)
+    def getVariables(self):
+        return self.head.getVariables() + self.tail.getVariables()
 
 
 class Atom:
@@ -145,6 +162,7 @@ class YPPrologVisitor(prologVisitor):
         self.clauses.setdefault((lhs.name(),len(lhs.args())),[]).append(c)
 
     def visitPredicatelist(self,ctx):
+        print "# visitPredicatelist", repr(ctx)
         predicateterm = self.visitPredicateterm(ctx.predicateterm())
         if ctx.predicatelist():
             predicatelist = self.visitPredicatelist(ctx.predicatelist())
@@ -153,6 +171,7 @@ class YPPrologVisitor(prologVisitor):
         return PredicateList(predicateterm,predicatelist)
 
     def visitSimplepredicate(self,ctx):
+        print "# visitSimplepredicate", repr(ctx)
         if ctx.TRUE() != None:
             return TruePredicate()
         if ctx.FAIL() != None:
@@ -167,11 +186,12 @@ class YPPrologVisitor(prologVisitor):
             return Predicate(functor)
 
     def visitPredicateterm(self,ctx):
+        print "# visitPredicateterm", repr(ctx)
         if ctx.simplepredicate() != None:
             return self.visitSimplepredicate(ctx.simplepredicate())
         if ctx.op:
             if ctx.op.text == '\\+':
-                predicateterm = self.visitPredicateterm(ctx.predicateterm())
+                predicateterm = self.visitPredicateterm(ctx.predicateterm(0))
                 return NegationPredicate(predicateterm)
             if ctx.op.text == ',':
                 lhs = self.visitPredicateterm(ctx.predicateterm(0))
@@ -186,10 +206,11 @@ class YPPrologVisitor(prologVisitor):
                 rhs = self.visitPredicateterm(ctx.predicateterm(1))
                 return DisjunctionPredicate(lhs,rhs)
         # else: ( predicateterm )
-        if ctx.predicateterm() != None:
+        if ctx.predicateterm() != []:
             return self.visitPredicateterm(ctx.predicateterm(0))
 
     def visitFunctor(self,ctx):
+        print "# visitFunctor", repr(ctx)
         atom = self.visitAtom(ctx.atom())
         if ctx.termlist() != None:
             termlist = self.visitTermlist(ctx.termlist())
@@ -198,6 +219,7 @@ class YPPrologVisitor(prologVisitor):
         return Functor(atom,termlist)
 
     def visitTermlist(self,ctx):
+        print "# visitTermlist", repr(ctx)
         term = self.visitTerm(ctx.term())
         if ctx.termlist():
             termlist = self.visitTermlist(ctx.termlist())
@@ -205,6 +227,7 @@ class YPPrologVisitor(prologVisitor):
             termlist = []
         return [ term ] + termlist
     def visitTerm(self,ctx):
+        print "# visitTerm", repr(ctx)
         if ctx.NUMERAL() != None:
             return NumeralTerm(ctx.NUMERAL().getText())
         if ctx.atom() != None:
@@ -220,31 +243,42 @@ class YPPrologVisitor(prologVisitor):
         #if ctx.predicate() != None:
         #    predicate = self.visitPredicate(ctx.predicate())
         #    return predicate
-        if ctx.termlist() != None:
+        if ctx.LBRACK() != None:
             if ctx.VARIABLE() != None:
-                # list head,tail
-                pass
-            else:
-                # list with just terms
+                # listpair
+                termlist = self.visitTermlist(ctx.termlist())
+                var = self.visitVARIABLE(ctx.VARIABLE())
+                p = reduce(lambda x,y: ListPairTerm(y,x), reversed(termlist), var)
+                return p
+            if ctx.termlist() != None:
+                # list with content
                 termlist = self.visitTermlist(ctx.termlist())
                 return ListTerm(termlist)
-        if ctx.VARIABLE() != None:
-            varname = ctx.VARIABLE().getText()
-            if varname == '_':
-                variable = AnonymousVariableTerm(self.anonymousVariableCounter)
-                self.anonymousVariableCounter += 1
             else:
-                variable = VariableTerm(varname)
-            return variable
-        if ctx.term() != None:
+                # empty list
+                l = ListTerm([])
+                return l
+        if ctx.VARIABLE() != None:
+            return self.visitVARIABLE(ctx.VARIABLE())
+        if ctx.term() != []:
             term = self.visitTerm(ctx.term())
             return term
+        else:
+            print "# 888",ctx.getText()
     def visitAtom(self,ctx):
         if ctx.STRING() != None:
             us = self.unquoteString(ctx.STRING().getText())
             return Atom(us)
         if ctx.ATOM() != None:
             return Atom(ctx.ATOM().getText())
+    def visitVARIABLE(self,var):
+        varname = var.getText()
+        if varname == '_':
+            variable = AnonymousVariableTerm(self.anonymousVariableCounter)
+            self.anonymousVariableCounter += 1
+        else:
+            variable = VariableTerm(varname)
+        return variable
     def unquoteString(self,s):
         i = 1 # skip first quote
         r = ""
