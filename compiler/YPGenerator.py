@@ -130,16 +130,15 @@ class YPPrologCompiler:
             funcs.append(self.compileFunction(func,body))
         return YPCodeProgram(funcs)
     def compileFunctionBody(self,clause):
+        self.findClauseHeadVariableArguments(clause.head.functor.args)
         headVarArguments = self.compileClauseHeadVariableArguments(clause.head.functor.args)
         self.pushBoundVars( [ v for v in self.headArgsByPos if v != None ] )
 
         freeVarsHead = self.getFreeVariables(clause.head.functor)
-        self.compileFreeVariableDeclarations(freeVarsHead)
         self.pushBoundVars(freeVarsHead)
         freeVarDeclarationCodeHead = self.compileFreeVariableDeclarations(freeVarsHead)
 
         freeVarsBody = self.getFreeVariables(clause.body)
-        self.compileFreeVariableDeclarations(freeVarsBody)
         self.pushBoundVars(freeVarsBody)
         freeVarDeclarationCodeBody = self.compileFreeVariableDeclarations(freeVarsBody)
 
@@ -310,21 +309,30 @@ class YPPrologCompiler:
         if isinstance(expr,NumeralTerm):
             return YPCodeValue(expr.num)
         print "UNK EXPR", expr,repr(expr)
-    def compileClauseHeadVariableArguments(self,args):
+    def findClauseHeadVariableArguments(self,args):
         # gets all arguments that are variables from args
         self.headArgsByPos = []
-        code = []
+        varcount = {}
         for i in range(len(args)):
             if isinstance(args[i],VariableTerm):
-                code.append( YPCodeAssign(YPCodeVar(args[i]),YPCodeVar(self.getArgumentVariable(i))) )
                 self.headArgsByPos.append(args[i].varname)
+                varcount.setdefault(args[i].varname,0)
+                varcount[args[i].varname] += 1
             else:
                 self.headArgsByPos.append(None)
+        # that occur only once
+        for i in range(len(args)):
+            a = self.headArgsByPos[i]
+            if a:
+                if varcount[a] > 1:
+                    self.headArgsByPos[i] = None
+    def compileClauseHeadVariableArguments(self,args):
+        code = []
+        for i in range(len(args)):
+            if self.headArgsByPos[i] != None:
+                code.append( YPCodeAssign(YPCodeVar(args[i]),YPCodeVar(self.getArgumentVariable(i))) )
         return code
     def compileFreeVariableDeclarations(self,variables):
-        # TODO: free variables
-        # variables = self.getVariablesFromArgumentList(args)
-        # freeVariables = self.filterFreeVariables(variables)
         code = [ self.compileVariableDeclaration(v) for v in variables ]
         return code
     def compileVariableDeclaration(self,var):
@@ -336,16 +344,6 @@ class YPPrologCompiler:
     def getCutIfLabel(self):
         self.cutIfCounter += 1
         return "cutIf"+str(self.cutIfCounter)
-    def getVariablesFromClauseHeadArguments(self,args):
-        # gets all arguments that are variables from args
-        variables = []
-        for i in range(len(args)):
-            if isinstance(args[i],VariableTerm):
-                variables.append( (args[i],self.getArgumentVariable(i)) )
-        return variables
-    def getVariablesFromArgumentList(self,args):
-        # gets all variables that are used in an argument list
-        return reduce(lambda x,y: x + y, [ v.getVariables() for v in args ], [])
     def getFreeVariables(self,expr):
         variables = expr.getVariables()
         return self.filterFreeVariables(variables)
