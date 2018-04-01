@@ -113,10 +113,14 @@ class YPCodeProgram:
 
 
 class YPPrologCompiler:
-    def __init__(self):
+    def __init__(self,options):
+        self.options = options
         self.boundVars = [ [] ]
         self.headArgsByPos = []
         self.cutIfCounter = 0
+    def _debug(self,*args):
+        if self.options.debug:
+            self.options.outfile.write('# ' + " ".join([str(a) for a in args]) + '\n')
     def pushBoundVars(self,variables):
         self.boundVars.append(self.boundVars[-1] + variables)
     def popBoundVars(self):
@@ -169,28 +173,28 @@ class YPPrologCompiler:
 
     def compileBody(self,body):
         # :- A,B
-        print "# DEBUG", body
+        self._debug("DEBUG", body)
         if isinstance(body,ConjunctionPredicate):
             # if A is simple
             if isinstance(body.lhs,Predicate):
                 if body.lhs.functor.name.value == '$CUTIF':
-                    print "# $CUTIF, A"
+                    self._debug("$CUTIF, A")
                     label = body.lhs.functor.args[0].value
                     codeA = self.compileBody(body.rhs)
                     codeB = [ YPCodeBreakBlock(label) ]
                     return codeA + codeB
                 else:
-                    print "# A,B"
+                    self._debug("A,B")
                     coderhs = self.compileBody(body.rhs)
                     return self.compilePredicate(body.lhs, coderhs)
             elif isinstance(body.lhs,CutPredicate):
-                print "# (!,A) => A [yieldBreak]"
+                self._debug("(!,A) => A [yieldBreak]")
                 codeA = self.compileBody(body.rhs)
                 return codeA + [ YPCodeYieldBreak() ]
             elif isinstance(body.lhs,NegationPredicate):
                 # for semidetnoneout => if (!A) { B }
                 # else:
-                print "# ((\+ A),B) =>  (A -> fail ; true),B"
+                self._debug("((\+ A),B) =>  (A -> fail ; true),B")
                 return self.compileBody(
                     ConjunctionPredicate(
                         DisjunctionPredicate(
@@ -201,14 +205,14 @@ class YPPrologCompiler:
                     )
                 )
             elif isinstance(body.lhs,ConjunctionPredicate): # A is complex
-                print "# (A,B),C => A,(B,C)"
+                self._debug("(A,B),C => A,(B,C)")
                 return self.compileBody(
                         ConjunctionPredicate(body.lhs.lhs, ConjunctionPredicate(body.lhs.rhs,body.rhs))
                 )
             elif isinstance(body.lhs,DisjunctionPredicate):
                 # (A -> T ; B ), C  =>  A -> (T,C) ; B, C
                 if isinstance(body.lhs.lhs,IfThenPredicate):
-                    print "# (A -> T ; B ), C  =>  A -> (T,C) ; B, C"
+                    self._debug("(A -> T ; B ), C  =>  A -> (T,C) ; B, C")
                     return self.compileBody(
                         DisjunctionPredicate(
                             IfThenPredicate(
@@ -220,7 +224,7 @@ class YPPrologCompiler:
                     )
                 # ( A ; B ) , C   =>  A,C ; B,C
                 else:
-                    print "# ( A ; B ) , C   =>  A,C ; B,C"
+                    self._debug("( A ; B ) , C   =>  A,C ; B,C")
                     return self.compileBody(
                         DisjunctionPredicate(
                             ConjunctionPredicate(body.lhs.lhs,body.rhs),
@@ -228,8 +232,8 @@ class YPPrologCompiler:
                         )
                     )
             elif isinstance(body.lhs,IfThenPredicate):
-                print "# (A -> T), B  =>  (A -> T ; fail), B"
-                print "#", body.lhs, body.rhs
+                self._debug("(A -> T), B  =>  (A -> T ; fail), B")
+                self._debug(body.lhs, body.rhs)
                 # (A -> T), B  =>  (A -> T ; fail), B
                 return self.compileBody(
                         ConjunctionPredicate(
@@ -241,15 +245,15 @@ class YPPrologCompiler:
                         ))
             # true , A  =>  A
             elif isinstance(body.lhs,TruePredicate):
-                print "# true , A => A"
+                self._debug("true , A => A")
                 return self.compileBody(body.rhs)
             elif isinstance(body.lhs,FailPredicate):
-                print "# fail , _ "
+                self._debug("fail , _ ")
                 return []
         elif isinstance(body,DisjunctionPredicate):
             # A -> T ; B     =>   breakableblock (  A , $CUTIF(CutIfLabel) , T ; B )
             if isinstance(body.lhs,IfThenPredicate):
-                print "# A -> T ; B  => breakableBlock( ... )"
+                self._debug("A -> T ; B  => breakableBlock( ... )")
                 cutIfLabel = self.getCutIfLabel()
                 code = self.compileBody(
                     DisjunctionPredicate(
@@ -266,40 +270,40 @@ class YPPrologCompiler:
                 return [ YPCodeBreakableBlock(cutIfLabel,code) ]
             else:
                 # else:  A ; B
-                print "# A ; B"
+                self._debug("A ; B")
                 codelhs = self.compileBody(body.lhs)
                 coderhs = self.compileBody(body.rhs)
                 return codelhs + coderhs
         elif isinstance(body,IfThenPredicate):
-            print "# [A  =>  A, true]  A -> T => (A -> T), true"
+            self._debug("[A  =>  A, true]  A -> T => (A -> T), true")
             return self.compileBody(ConjunctionPredicate(body, TruePredicate()))
         # :- functor(...)   A => A, true
         elif isinstance(body,Predicate):
             if body.functor.name.value == '$CUTIF':
-                print "# $CUTIF", body.functor.args
+                self._debug("$CUTIF", body.functor.args)
                 return [ self.YPCodeBreakBlock(body.functor.args[0].value) ]
             else:
-                print "# [A  =>  A, true]  A => A, true"
+                self._debug("[A  =>  A, true]  A => A, true")
                 return self.compileBody(ConjunctionPredicate(body, TruePredicate()))
         elif isinstance(body,NegationPredicate):
-            print "# [A  =>  A, true]  (\+ A) => (\+ A), true"
+            self._debug("[A  =>  A, true]  (\+ A) => (\+ A), true")
             return self.compileBody(ConjunctionPredicate(body, TruePredicate()))
         # :- fail
         elif isinstance(body,FailPredicate):
-            print "# [A  =>  A, true]  fail => fail, true"
+            self._debug("[A  =>  A, true]  fail => fail, true")
             return self.compileBody(ConjunctionPredicate(body, TruePredicate()))
         # :- true
         elif isinstance(body,TruePredicate):
             # TODO: ? return, return True, yield False (depending on state)
-            print "# true"
+            self._debug("true")
             return [ YPCodeYieldFalse() ]
         elif isinstance(body,CutPredicate):
-            print "# !"
+            self._debug("!")
             # for det predicates => [return]
             # for semidet predicates => [ returntrue ]
             # else => [ yieldtrue, yieldbreak ]
             return [ YPCodeYieldTrue(), YPCodeYieldBreak() ]
-        print "UNK", body
+        self._debug("UNK", body)
     def compilePredicate(self,pred,code):
         args = [ self.compileExpression(a) for a in pred.functor.args ]
         return [ YPCodeForeach(YPCodeCall('query',[YPCodeExpr(pred.functor.name.value),YPCodeList(args)]),code) ]
@@ -328,9 +332,9 @@ class YPPrologCompiler:
             return self.compileList(expr)
         if isinstance(expr,ListPairTerm):
             return YPCodeCall('listpair',[ self.compileExpression(expr.head), self.compileExpression(expr.tail) ])
-        print "UNK EXPR", expr,repr(expr)
+        self._debug("UNK EXPR", expr,repr(expr))
     def compileList(self,expr):
-        print "# compileList:",expr
+        self._debug("compileList:",expr)
         if expr.items == []:
             return YPCodeVar('ATOM_NIL')
         else:
@@ -396,8 +400,7 @@ class YPPythonCodeGenerator:
         funcargs = ",".join(func.args)
         s = self.l("def %s(%s):" % (func.name, funcargs))
         self.indent()
-        # TODO: check if the code has breakable blocks, if so, generate "ugly code" here
-        # the ugly code doesn't hurt, generate it anyway
+        # the "ugly code" for breakable blocks doesn't hurt, generate it anyway
         unsetBreakCode = self.l("doBreak = False")
         wrapCode = self.l("for _ in [1]:")
         self.indent()
