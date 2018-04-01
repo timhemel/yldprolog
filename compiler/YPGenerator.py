@@ -39,6 +39,14 @@ class YPCodeYieldFalse:
     def generate(self,generator):
         return generator.generateYieldFalse(self)
 
+class YPCodeYieldTrue:
+    def generate(self,generator):
+        return generator.generateYieldTrue(self)
+
+class YPCodeYieldBreak:
+    def generate(self,generator):
+        return generator.generateYieldBreak(self)
+
 class YPCodeIf:
     def __init__(self,condition,trueCode,falseCode=[]):
         """condition is a YPCodeExpr
@@ -176,6 +184,10 @@ class YPPrologCompiler:
                     print "# A,B"
                     coderhs = self.compileBody(body.rhs)
                     return self.compilePredicate(body.lhs, coderhs)
+            elif isinstance(body.lhs,CutPredicate):
+                print "# (!,A) => A [yieldBreak]"
+                codeA = self.compileBody(body.rhs)
+                return codeA + [ YPCodeYieldBreak() ]
             elif isinstance(body.lhs,ConjunctionPredicate): # A is complex
                 print "# (A,B),C => A,(B,C)"
                 return self.compileBody(
@@ -266,6 +278,12 @@ class YPPrologCompiler:
             # TODO: ? return, return True, yield False (depending on state)
             print "# true"
             return [ YPCodeYieldFalse() ]
+        elif isinstance(body,CutPredicate):
+            print "# !"
+            # for det predicates => [return]
+            # for semidet predicates => [ returntrue ]
+            # else => [ yieldtrue, yieldbreak ]
+            return [ YPCodeYieldTrue(), YPCodeYieldBreak() ]
         print "UNK", body
     def compilePredicate(self,pred,code):
         args = [ self.compileExpression(a) for a in pred.functor.args ]
@@ -318,7 +336,6 @@ class YPPrologCompiler:
     def getCutIfLabel(self):
         self.cutIfCounter += 1
         return "cutIf"+str(self.cutIfCounter)
-
     def getVariablesFromClauseHeadArguments(self,args):
         # gets all arguments that are variables from args
         variables = []
@@ -401,6 +418,10 @@ class YPPythonCodeGenerator:
         return s
     def generateYieldFalse(self,yf):
         return self.l("yield False")
+    def generateYieldTrue(self,yt):
+        return self.l("yield True")
+    def generateYieldBreak(self,yb):
+        return self.l("return")
     def generateAssign(self,assign):
         return self.l("%s = %s" % (assign.lhs.generate(self),assign.rhs.generate(self)))
     def generateBreakableBlock(self, bb):

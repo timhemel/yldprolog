@@ -56,6 +56,7 @@ predicatelist
 simplepredicate 
     : TRUE
     | FAIL
+    | CUT
     // | atom
     | functor
     ;
@@ -75,7 +76,7 @@ atom
 predicateterm
     : simplepredicate
     | op='\\+' predicateterm
-    | predicateterm op=',' predicateterm
+    | predicateterm op=',' predicateterm   // TODO make right assoc
     | predicateterm op='->' predicateterm
     | predicateterm op=';' predicateterm
     | '(' predicateterm ')'
@@ -107,7 +108,7 @@ query
 
 TRUE: 'true' ;
 FAIL: 'fail' ;
-
+CUT: '!' ;
 
 VARIABLE 
     : UCLETTER CHARACTER*

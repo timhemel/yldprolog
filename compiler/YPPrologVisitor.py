@@ -24,6 +24,12 @@ class FailPredicate:
     def __str__(self):
         return "fail"
 
+class CutPredicate:
+    def getVariables(self):
+        return []
+    def __str__(self):
+        return "!"
+
 class Predicate:
     def __init__(self,functor):
         self.functor = functor
@@ -151,6 +157,8 @@ class YPPrologVisitor(prologVisitor):
             return TruePredicate()
         if ctx.FAIL() != None:
             return FailPredicate()
+        if ctx.CUT() != None:
+            return CutPredicate()
         #if ctx.atom():
         #    atom = self.visitAtom(ctx.atom())
         #    return Predicate(atom)
