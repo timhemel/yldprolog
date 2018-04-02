@@ -212,6 +212,7 @@ class YP(object):
                 'ATOM_NIL': self.ATOM_NIL,
                 'unify': unify,
                 'matchDynamic': self.matchDynamic,
+                'query': self.query,
                 'True': True,
                 'False': False,
         }
