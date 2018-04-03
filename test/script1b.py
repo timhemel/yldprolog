@@ -1,12 +1,10 @@
-#!/usr/bin/env python
-
-# import sys
-# from YP import *
-# from Variable import *
-# from Atom import *
-
-
 def fact(arg1):
-  for l1 in unify(arg1, atom("blue")):
-    yield False
+  doBreak = False
+  for _ in [1]:
+    for l1 in unify(arg1,atom(u'blue')):
+      yield False
+    if doBreak:
+      break
+  if False:
+      yield False
 

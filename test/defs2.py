@@ -1,12 +1,10 @@
-#!/usr/bin/env python
-
-# import sys
-# from YP import *
-# from Variable import *
-# from Atom import *
-
-
 def testlist(arg1):
-  for l1 in unify(arg1, makelist([atom("cyan"), atom("magenta"), atom("yellow")])):
-    yield False
+  doBreak = False
+  for _ in [1]:
+    for l1 in unify(arg1,makelist([atom(u'cyan'),atom(u'magenta'),atom(u'yellow')])):
+      yield False
+    if doBreak:
+      break
+  if False:
+      yield False
 

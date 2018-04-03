@@ -266,12 +266,9 @@ class TestYP(unittest.TestCase):
     def testSploitEval(self):
         yp = YP()
         yp.loadScript('eval.py')
-        try:
-            q = yp.query('sploit', ['1+1'])
-            r = [ x for x in q ]
-            self.fail('Expected NameError')
-        except NameError:
-            pass
+        q = yp.query('sploit', ['1+1'])
+        r = [ x for x in q ]
+        self.assertEquals(r,[])
 
     def testLoadScriptsAddMultipleDefinitions(self):
         yp = YP()
