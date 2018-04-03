@@ -326,7 +326,7 @@ class TestYP(unittest.TestCase):
         yp = YP()
         yp.loadScript('geometricobjects.py',overwrite=False)
         Y = yp.variable()
-        q = yp.query('horizontal', [
+        q = yp.query('vertical', [
             yp.functor('seg', [
                 yp.functor('point',[1,1]),
                 yp.functor('point',[2,Y])
