@@ -21,16 +21,15 @@ class Atom(IUnifiable):
         return self._name
     def __str__(self):
         return "atom(%s)" % self._name
-    def unify(self,term,yp):
+    def unify(self,term):
         arg = getValue(term)
-        print "Unify atom:",self,arg
         if isinstance(arg,Atom):
             if self._name == arg._name:
                 return YPSuccess()
             else:
                 return YPFail()
         elif isinstance(arg,Variable):
-            return arg.unify(self,yp)
+            return arg.unify(self)
         else:
             return YPFail()
 
@@ -57,8 +56,7 @@ class Variable(IUnifiable):
         if self._isBound:
             return "var(%s)" % self._value
         return "var()"
-    def unify(self,arg,yp):
-        print "Unify var:",self,arg
+    def unify(self,arg):
         if not self._isBound:
             self._value = getValue(arg)
             if self._value == self:
@@ -70,7 +68,7 @@ class Variable(IUnifiable):
                 finally:
                     self._isBound = False
         else: # is bound
-            for l1 in unify(self,arg,yp):
+            for l1 in unify(self,arg):
                 yield False
 
 
@@ -93,16 +91,15 @@ class Functor(IUnifiable):
     def __str__(self):
         args = ",".join([str(a) for a in self._args])
         return "%s(%s)" % (self._name,args)
-    def unify(self,term,yp):
+    def unify(self,term):
         arg = getValue(term)
-        print "Unify functor:",self,arg
         if isinstance(arg, Functor):
             if self._name == arg._name:
-                return yp.unifyArrays(self._args,arg._args)
+                return unifyArrays(self._args,arg._args)
             else:
                 return YPFail()
         elif isinstance(arg,Variable):
-            return arg.unify(self,yp)
+            return arg.unify(self)
         else:
             return YPFail()
 
@@ -110,8 +107,8 @@ class Answer:
     """Datastructure to represent predicates/facts."""
     def __init__(self,values):
         self.values = values
-    def match(self,args,yp):
-        return yp.unifyArrays(args,self.values)
+    def match(self,args):
+        return unifyArrays(args,self.values)
 
 class YPFail(object):
     """Iterator that always stops."""
@@ -156,6 +153,44 @@ def toPython(v):
         return v.toPython()
     return v
 
+def unify(term1,term2):
+    """Tries to unify term1 and term2. After unification, variables in the terms will be bound.
+    """
+    arg1 = getValue(term1)
+    arg2 = getValue(term2)
+    # print "Unify:\n\t", term1,"\n\t", term2
+    if isinstance(arg1,IUnifiable):
+        return arg1.unify(arg2)
+    elif isinstance(arg2,IUnifiable):
+        return arg2.unify(arg1)
+    else:
+        if arg1 == arg2:
+            return YPSuccess()
+        else:
+            return YPFail()
+
+def unifyArrays(array1,array2):
+    """Unifies two lists of terms."""
+    if len(array1) != len(array2):
+        return
+    iterators = [None]*len(array1)
+    numIterators = 0
+    gotMatch = True
+    for i in range(len(array1)):
+        iterators[i] = iter(unify(array1[i],array2[i]))
+        numIterators += 1
+        try:
+            iterators[i].next()
+        except StopIteration:
+            gotMatch = False
+            break
+    try:
+        if gotMatch:
+            yield False
+    finally:
+        for i in range(numIterators):
+            iterators[i].close()
+
 
 class YP(object):
     """The YieldProlog engine."""
@@ -175,7 +210,7 @@ class YP(object):
                 'listpair': self.listpair,
                 'makelist': self.makelist,
                 'ATOM_NIL': self.ATOM_NIL,
-                'unify': self.unify,
+                'unify': unify,
                 'matchDynamic': self.matchDynamic,
                 'True': True,
                 'False': False,
@@ -215,47 +250,6 @@ class YP(object):
         """Creates a Prolog list from a Python list. l is a list of Prolog terms."""
         r = reduce( lambda x,y: self.listpair(y,x), reversed(l), self.ATOM_NIL )
         return r
-
-    def unify(self,term1,term2):
-        """Tries to unify term1 and term2. After unification, variables in the terms will be bound.
-        """
-        arg1 = getValue(term1)
-        arg2 = getValue(term2)
-        print "Unify:\n\t", term1,"\n\t", term2
-        if isinstance(arg1,IUnifiable):
-            return arg1.unify(arg2,self)
-        elif isinstance(arg2,IUnifiable):
-            return arg2.unify(arg1,self)
-        else:
-            if arg1 == arg2:
-                return YPSuccess()
-            else:
-                return YPFail()
-
-    def unifyArrays(self,array1,array2):
-        """Unifies two lists of terms."""
-        print "Unify arrays:\n\t", array1,"\n\t", array2
-        if len(array1) != len(array2):
-            return
-        iterators = [None]*len(array1)
-        numIterators = 0
-        gotMatch = True
-        for i in range(len(array1)):
-            iterators[i] = iter(self.unify(array1[i],array2[i]))
-            numIterators += 1
-            try:
-                iterators[i].next()
-            except StopIteration:
-                gotMatch = False
-                break
-        try:
-            if gotMatch:
-                yield False
-        finally:
-            for i in range(numIterators):
-                iterators[i].close()
-
-
 
     def loadScript(self,fn,overwrite=True):
         """Loads a compiled Prolog program. Any functions defined in this program will be
@@ -379,7 +373,7 @@ class YP(object):
 
     def _matchAllClauses(self,clauses,args):
         for clause in clauses:
-            for cut in clause.match(args,self):
+            for cut in clause.match(args):
                 yield False
                 if cut:
                     return
