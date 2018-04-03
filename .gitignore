@@ -121,3 +121,11 @@ tags
 
 # End of https://www.gitignore.io/api/vim
 
+# generated antlr4 files
+compiler/prolog.tokens
+compiler/prologLexer.py
+compiler/prologLexer.tokens
+compiler/prologListener.py
+compiler/prologParser.py
+compiler/prologVisitor.py
+
