@@ -338,7 +338,7 @@ class YPPrologCompiler:
         if expr.items == []:
             return YPCodeVar('ATOM_NIL')
         else:
-            return YPCodeCall('makelist',[ self.compileExpression(x) for x in expr.items ])
+            return YPCodeCall('makelist',[YPCodeList([ self.compileExpression(x) for x in expr.items ])])
             # return NIL
     def findClauseHeadVariableArguments(self,args):
         # gets all arguments that are variables from args
