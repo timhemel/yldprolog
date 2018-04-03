@@ -8,7 +8,6 @@ from YP import YP
 from YP import Atom
 from YP import Variable
 from YP import Answer
-from YP import unify
 
 class TestYP(unittest.TestCase):
     def setUp(self):
@@ -88,18 +87,18 @@ class TestYP(unittest.TestCase):
     def testMatchAnswerDifferentArity(self):
         yp = YP()
         a = Answer([yp.atom('tom')])
-        r = [x for x in a.match([yp.variable(), yp.variable()])]
+        r = [x for x in a.match([yp.variable(), yp.variable()],yp)]
         self.assertEquals(r,[])
     def testMatchAnswerMatching(self):
         yp = YP()
         a = Answer([yp.atom('tom')])
         v = yp.variable()
-        r = [v.getValue() for x in a.match([v])]
+        r = [v.getValue() for x in a.match([v],yp)]
         self.assertEquals(r,[yp.atom('tom')])
     def testMatchAnswerNotMatching(self):
         yp = YP()
         a = Answer([yp.atom('tom'),yp.atom('cat')])
-        r = [x for x in a.match([yp.atom('tom'),yp.atom('mouse')])]
+        r = [x for x in a.match([yp.atom('tom'),yp.atom('mouse')],yp)]
         self.assertEquals(r,[])
 
 
@@ -108,38 +107,38 @@ class TestYP(unittest.TestCase):
         yp = YP()
         a1 = yp.atom('tom')
         a2 = yp.atom('tom')
-        r = [ r for r in unify(a1,a2) ]
+        r = [ r for r in yp.unify(a1,a2) ]
         self.assertEquals(r,[False])
     def testUnifyAtomsDifferent(self):
         yp = YP()
         a1 = yp.atom('tom')
         a2 = yp.atom('jerry')
-        r = [ r for r in unify(a1,a2) ]
+        r = [ r for r in yp.unify(a1,a2) ]
         self.assertEquals(r,[])
     def testUnifyVariableUnbound(self):
         yp = YP()
         a1 = yp.atom('tom')
         v1 = yp.variable()
-        r = [ v1.getValue() for x in unify(v1,a1) ]
+        r = [ v1.getValue() for x in yp.unify(v1,a1) ]
         # self.assertEquals(r,[False])
         self.assertEquals(r,[yp.atom('tom')])
     def testUnifyVariableInteger(self):
         yp = YP()
         v1 = yp.variable()
-        r = [ v1.getValue() for x in unify(v1,5) ]
+        r = [ v1.getValue() for x in yp.unify(v1,5) ]
         self.assertEquals(r,[5])
     def testUnifyVariableWithVariable(self):
         yp = YP()
         v1 = yp.variable()
         v2 = yp.variable()
-        r = [ (v1.getValue(),v2.getValue()) for x in unify(v1,v2) ]
+        r = [ (v1.getValue(),v2.getValue()) for x in yp.unify(v1,v2) ]
         self.assertEquals(len(r),1)
         self.assertEquals(r[0][0],r[0][1])
     def testUnifyVariableComplexAtom(self):
         yp = YP()
         a1 = yp.functor("point",[1,1])
         v1 = yp.variable()
-        r = [ v1.getValue() for x in unify(v1,a1) ]
+        r = [ v1.getValue() for x in yp.unify(v1,a1) ]
         self.assertEquals(r,[a1])
     def testUnifyComplexAtoms(self):
         yp = YP()
@@ -147,14 +146,14 @@ class TestYP(unittest.TestCase):
         v2 = yp.variable()
         a1 = yp.functor("point",[v1,2])
         a2 = yp.functor("point",[1,v2])
-        r = [ (v1.getValue(),v2.getValue()) for x in unify(a1,a2) ]
+        r = [ (v1.getValue(),v2.getValue()) for x in yp.unify(a1,a2) ]
         self.assertEquals(r,[(1,2)])
     def testUnifyComplexAtomsNotMatching(self):
         yp = YP()
         v1 = yp.variable()
         a1 = yp.functor("point",[v1,2])
         a2 = yp.functor("point",[1,1])
-        r = [ v1.getValue() for x in unify(a1,a2) ]
+        r = [ v1.getValue() for x in yp.unify(a1,a2) ]
         self.assertEquals(r,[])
     def testUnifyComplexAtomsFreeVariable(self):
         yp = YP()
@@ -162,7 +161,7 @@ class TestYP(unittest.TestCase):
         v2 = yp.variable()
         a1 = yp.functor("point",[v1,2])
         a2 = yp.functor("point",[v2,2])
-        r = [ (v1.getValue(),v2.getValue()) for x in unify(a1,a2) ]
+        r = [ (v1.getValue(),v2.getValue()) for x in yp.unify(a1,a2) ]
         self.assertEquals(len(r),1)
         self.assertEquals(r[0][0],r[0][1])
 
@@ -172,7 +171,7 @@ class TestYP(unittest.TestCase):
         v1 = yp.variable()
         l1 = yp.listpair(yp.atom("a"), yp.listpair(yp.atom("b"),yp.ATOM_NIL))
         l2 = yp.listpair(yp.atom("a"), yp.listpair(v1,yp.ATOM_NIL))
-        r = [ v1.getValue() for x in unify(l1,l2) ]
+        r = [ v1.getValue() for x in yp.unify(l1,l2) ]
         self.assertEquals(r,[yp.atom("b")])
 
     def testUnifyListsWithMakelist(self):
@@ -180,7 +179,7 @@ class TestYP(unittest.TestCase):
         v1 = yp.variable()
         l1 = yp.listpair(yp.atom("a"), yp.listpair(yp.atom("b"),yp.ATOM_NIL))
         l2 = yp.makelist([yp.atom("a"),v1])
-        r = [ v1.getValue() for x in unify(l1,l2) ]
+        r = [ v1.getValue() for x in yp.unify(l1,l2) ]
         self.assertEquals(r,[yp.atom("b")])
 
     # test loading a script
@@ -229,7 +228,7 @@ class TestYP(unittest.TestCase):
             # check if arg1 instantiated
             if isinstance(arg1,Atom) and arg1.name() != "blue":
                 side_effects.append('not blue')
-            for l1 in unify(arg1, yp.atom("blue")):
+            for l1 in yp.unify(arg1, yp.atom("blue")):
                 yield False
         yp.registerFunction('func',func)
         q = yp.query('func',[yp.atom('red')])
