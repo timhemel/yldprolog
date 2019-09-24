@@ -137,7 +137,7 @@ class YPSuccess(object):
         pass
 
 def chain_functions(func1, func2):
-    funcs = [f for f in [func1, func2] if f != None]
+    funcs = [f for f in [func1, func2] if f is not None]
     def chain(*args):
         return itertools.chain(*[f(*args) for f in funcs])
     return chain
