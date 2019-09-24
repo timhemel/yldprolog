@@ -277,7 +277,7 @@ class YP(object):
         # print "Loaded script"
         #for k,v in self.eval_context.items():
         #    print "\t%s -> %s" % (k,v)
-    def registerFunction(self, name, func):
+    def register_function(self, name, func):
         """Makes the function func available to the engine with name name. This can be used
         to call custom functions. These function will have to behave as Prolog functions, i.e.
         they will need to yield boolean values.

@@ -236,7 +236,7 @@ class TestYP(unittest.TestCase):
                 side_effects.append('not blue')
             for l1 in unify(arg1, yp.atom("blue")):
                 yield False
-        yp.registerFunction('func',func)
+        yp.register_function('func',func)
         q = yp.query('func',[yp.atom('red')])
         r = [ x for x in q ]
         self.assertEqual(side_effects, ['not blue'])
