@@ -284,7 +284,7 @@ class YP(object):
         """
         self.eval_context[name] = func
 
-    def _findPredicates(self, name, arity):
+    def _find_predicates(self, name, arity):
         try:
             return self._predicates_store[(name, arity)]
         except KeyError:
@@ -302,7 +302,7 @@ class YP(object):
         values cannot contain unbound variables.
         """
         try:
-            clauses = self._findPredicates(name.name(), len(values))
+            clauses = self._find_predicates(name.name(), len(values))
             # indexedanswers
         except YPException as e:
             clauses = []
@@ -371,7 +371,7 @@ class YP(object):
         Returns an iterator.
         """
         try:
-            clauses = self._findPredicates(name.name(), len(args))
+            clauses = self._find_predicates(name.name(), len(args))
             return self._matchAllClauses(clauses, args)
         except YPException:
             return YPFail()
