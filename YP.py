@@ -217,7 +217,7 @@ class YP(object):
                 'True': True,
                 'False': False,
         }
-        self.evalBlacklist = self.evalContext.keys()
+        self.evalBlacklist = list(self.evalContext.keys())
     def atom(self,name,module=None):
         """Create an atom with name name in this engine. The parameter module is ignored and
         present to be compatible with the output from the modified YieldProlog compiler.
