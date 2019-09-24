@@ -33,7 +33,7 @@ class TestYP(unittest.TestCase):
         yp.assert_fact(yp.atom('cat'),[yp.atom('tom')])
         V1 = yp.variable()
         q = yp.query('cat',[V1])
-        r = yp.evaluateBounded(q,(lambda x: V1.get_value()))
+        r = yp.evaluate_bounded(q,(lambda x: V1.get_value()))
         self.assertEqual(r, [ yp.atom('tom') ])
 
     def testMatchExampleHorizontalVertical(self):
@@ -250,7 +250,7 @@ class TestYP(unittest.TestCase):
         q = yp.query('canget',[ yp.functor('state',[yp.atom('atdoor'),yp.atom('onfloor'),yp.atom('atwindow'),yp.atom('hasnot')])])
         # this query has infinitely many solutions, just get the first one
         recursion_limit = sys.getrecursionlimit()
-        r = yp.evaluateBounded(q, lambda x:x)
+        r = yp.evaluate_bounded(q, lambda x:x)
         self.assertEqual(sys.getrecursionlimit(),recursion_limit)
         self.assertGreaterEqual(len(r),1)
 

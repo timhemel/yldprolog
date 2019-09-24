@@ -333,7 +333,7 @@ class YP(object):
 
         return self.matchDynamic(self.atom(name), args)
 
-    def evaluateBounded(self, query, projection_function, recursion_limit=200):
+    def evaluate_bounded(self, query, projection_function, recursion_limit=200):
         """Evaluates a query, but limits the recursion depth to recursion_limit. If a query
         causes a recursion that is too deep, the query will be aborted and the results collected
         so far will be returned.
@@ -344,7 +344,7 @@ class YP(object):
         yp.assert_fact(yp.atom('cat'),[yp.atom('tom')])
         V1 = yp.variable()
         q = yp.query('cat',[V1])
-        r = yp.evaluateBounded(q,(lambda x: V1.get_value()))
+        r = yp.evaluate_bounded(q,(lambda x: V1.get_value()))
         assert r == [ yp.atom('tom') ]
         """
         old_recursionlimit = sys.getrecursionlimit()
