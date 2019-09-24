@@ -198,7 +198,7 @@ class YP(object):
     """The YieldProlog engine."""
     def __init__(self):
         self._atom_store = {}
-        self._predicatesStore = {}
+        self._predicates_store = {}
         self.ATOM_NIL = self.atom("[]")
         self.ATOM_DOT = "."
         self.evalContext = {
@@ -286,12 +286,12 @@ class YP(object):
 
     def _findPredicates(self, name, arity):
         try:
-            return self._predicatesStore[(name, arity)]
+            return self._predicates_store[(name, arity)]
         except KeyError:
             raise YPException('Unknown predicate: %s/%d' % (name, arity))
 
     def _updatePredicate(self, name, arity, clauses):
-        self._predicatesStore[(name.name(), arity)] = clauses
+        self._predicates_store[(name.name(), arity)] = clauses
 
     def assertFact(self, name, values):
         """From the original YieldProlog:
