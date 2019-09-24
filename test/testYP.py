@@ -78,8 +78,8 @@ class TestYP(unittest.TestCase):
             ])
         ])
  
-        r0 = [r for r in q0]
-        r1 = [r for r in q1]
+        r0 = list(q0)
+        r1 = list(q1)
         r2 = [Y.get_value() for r in q2]
 
         self.assertEqual(r0, [False])
@@ -90,7 +90,7 @@ class TestYP(unittest.TestCase):
     def test_match_answer_different_arity(self):
         yp = YP()
         a = Answer([yp.atom('tom')])
-        r = [x for x in a.match([yp.variable(), yp.variable()])]
+        r = list(a.match([yp.variable(), yp.variable()]))
         self.assertEqual(r, [])
     def test_match_answer_matching(self):
         yp = YP()
@@ -101,21 +101,21 @@ class TestYP(unittest.TestCase):
     def test_match_answer_not_matching(self):
         yp = YP()
         a = Answer([yp.atom('tom'), yp.atom('cat')])
-        r = [x for x in a.match([yp.atom('tom'), yp.atom('mouse')])]
+        r = list(a.match([yp.atom('tom'), yp.atom('mouse')]))
         self.assertEqual(r, [])
 
     def test_unify_atoms_equal(self):
         yp = YP()
         a1 = yp.atom('tom')
         a2 = yp.atom('tom')
-        r = [r for r in unify(a1, a2)]
+        r = list(unify(a1, a2))
         self.assertEqual(r, [False])
 
     def test_unify_atoms_different(self):
         yp = YP()
         a1 = yp.atom('tom')
         a2 = yp.atom('jerry')
-        r = [r for r in unify(a1, a2)]
+        r = list(unify(a1, a2))
         self.assertEqual(r, [])
 
     def test_unify_variable_unbound(self):
@@ -243,7 +243,7 @@ class TestYP(unittest.TestCase):
                 yield False
         yp.register_function('func', func)
         q = yp.query('func', [yp.atom('red')])
-        r = [x for x in q]
+        r = list(q)
         self.assertEqual(side_effects, ['not blue'])
 
     def test_run_infinite_script(self):
@@ -264,7 +264,7 @@ class TestYP(unittest.TestCase):
         l = yp.makelist([yp.atom(x) for x in ['Johnny', 'Dee Dee', 'Joey',
             'Tommy', 'Marky', 'Richie', 'Elvis', 'C. J.']])
         q = yp.query('member', [yp.atom('Richie'), l])
-        r = [x for x in q]
+        r = list(q)
         self.assertEqual(r, [False])
         v1 = yp.variable()
         v2 = yp.variable()
@@ -277,7 +277,7 @@ class TestYP(unittest.TestCase):
         yp = YP()
         yp.load_script(pathlib.Path(_SCRIPT_DIR) / 'eval.py')
         q = yp.query('sploit', ['1+1'])
-        r = [x for x in q]
+        r = list(q)
         self.assertEqual(r, [])
 
     def test_load_scripts_add_multiple_definitions(self):
