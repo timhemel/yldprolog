@@ -264,7 +264,6 @@ class YP(object):
         with open(fn,"r") as f:
             code = compile(f.read(), fn, 'exec')
             exec(code, newContext)
-        # execfile(fn,newContext)
         for k,v in newContext.items():
             if self.evalContext.get(k) != v: # difference!
                 # combine
