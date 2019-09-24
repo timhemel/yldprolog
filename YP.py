@@ -16,7 +16,7 @@ class Atom(IUnifiable):
         self._name = name
     def name(self):
         return self._name
-    def toPython(self):
+    def to_python(self):
         if self._name == '[]':
             return []
         return self._name
@@ -48,11 +48,11 @@ class Variable(IUnifiable):
         if isinstance(self._value, Variable):
             return self._value.getValue()
         return self._value
-    def toPython(self):
+    def to_python(self):
         v = self.getValue()
         if isinstance(v, Variable):
             return None
-        return toPython(v)
+        return to_python(v)
     def __str__(self):
         if self._isBound:
             return "var(%s)" % self._value
@@ -81,13 +81,13 @@ class Functor(IUnifiable):
         """
         self._name = name
         self._args = args
-    def toPython(self):
+    def to_python(self):
         if self._name == ".":
             # listpair
-            args = [toPython(self._args[0])] + toPython(self._args[1])
+            args = [to_python(self._args[0])] + to_python(self._args[1])
             return args
         else:
-            args = [toPython(v) for v in self._args]
+            args = [to_python(v) for v in self._args]
             return (self._name, args)
     def __str__(self):
         args = ",".join([str(a) for a in self._args])
@@ -148,10 +148,10 @@ def getValue(v):
         return v.getValue()
     return v
 
-def toPython(v):
+def to_python(v):
     """Return v as a Python data structure."""
     if isinstance(v, IUnifiable):
-        return v.toPython()
+        return v.to_python()
     return v
 
 def unify(term1, term2):
