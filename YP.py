@@ -197,7 +197,7 @@ def unify_arrays(array1, array2):
 class YP(object):
     """The YieldProlog engine."""
     def __init__(self):
-        self._atomStore = {}
+        self._atom_store = {}
         self._predicatesStore = {}
         self.ATOM_NIL = self.atom("[]")
         self.ATOM_DOT = "."
@@ -223,8 +223,8 @@ class YP(object):
         """Create an atom with name name in this engine. The parameter module is ignored and
         present to be compatible with the output from the modified YieldProlog compiler.
         """
-        self._atomStore.setdefault(name, Atom(name))
-        return self._atomStore[name]
+        self._atom_store.setdefault(name, Atom(name))
+        return self._atom_store[name]
     def variable(self):
         """Create a variable in this engine."""
         return Variable()
