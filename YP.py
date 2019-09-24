@@ -201,7 +201,7 @@ class YP(object):
         self._predicates_store = {}
         self.ATOM_NIL = self.atom("[]")
         self.ATOM_DOT = "."
-        self.evalContext = {
+        self.eval_context = {
             '__builtins__': {},
             'variable': self.variable,
             'atom': self.atom,
@@ -218,7 +218,7 @@ class YP(object):
             'True': True,
             'False': False,
         }
-        self.evalBlacklist = list(self.evalContext.keys())
+        self.evalBlacklist = list(self.eval_context.keys())
     def atom(self, name, module=None):
         """Create an atom with name name in this engine. The parameter module is ignored and
         present to be compatible with the output from the modified YieldProlog compiler.
@@ -261,28 +261,28 @@ class YP(object):
         function definitions will be combined. Functions with the same name but a different
         number of arguments will be overwritten or combined. This could cause runtime errors.
         """
-        newContext = self.evalContext.copy()
+        newContext = self.eval_context.copy()
         with open(fn, "r") as f:
             code = compile(f.read(), fn, 'exec')
             exec(code, newContext)
         for k, v in newContext.items():
-            if self.evalContext.get(k) != v: # difference!
+            if self.eval_context.get(k) != v: # difference!
                 # combine
                 if overwrite:
-                    self.evalContext[k] = v
+                    self.eval_context[k] = v
                 else:
-                    # self.evalContext[k] = itertools.chain(self.evalContext.get(k,[]),v)
-                    self.evalContext[k] = chain_functions(self.evalContext.get(k), v)
+                    # self.eval_context[k] = itertools.chain(self.eval_context.get(k,[]),v)
+                    self.eval_context[k] = chain_functions(self.eval_context.get(k), v)
         # TODO: raise YPEngineException if loading fails
         # print "Loaded script"
-        #for k,v in self.evalContext.items():
+        #for k,v in self.eval_context.items():
         #    print "\t%s -> %s" % (k,v)
     def registerFunction(self, name, func):
         """Makes the function func available to the engine with name name. This can be used
         to call custom functions. These function will have to behave as Prolog functions, i.e.
         they will need to yield boolean values.
         """
-        self.evalContext[name] = func
+        self.eval_context[name] = func
 
     def _findPredicates(self, name, arity):
         try:
@@ -324,7 +324,7 @@ class YP(object):
         """
         try:
             if name not in self.evalBlacklist:
-                function = self.evalContext[name]
+                function = self.eval_context[name]
                 return function(*args)
         except KeyError as e:
             pass
