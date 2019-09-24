@@ -261,8 +261,9 @@ class YP(object):
         number of arguments will be overwritten or combined. This could cause runtime errors.
         """
         newContext = self.evalContext.copy()
-        code = compile(open(fn,"r").read(), fn, 'exec')
-        exec(code, newContext)
+        with open(fn,"r") as f:
+            code = compile(f.read(), fn, 'exec')
+            exec(code, newContext)
         # execfile(fn,newContext)
         for k,v in newContext.items():
             if self.evalContext.get(k) != v: # difference!
