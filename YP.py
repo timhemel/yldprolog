@@ -261,11 +261,11 @@ class YP(object):
         function definitions will be combined. Functions with the same name but a different
         number of arguments will be overwritten or combined. This could cause runtime errors.
         """
-        newContext = self.eval_context.copy()
+        new_context = self.eval_context.copy()
         with open(fn, "r") as f:
             code = compile(f.read(), fn, 'exec')
-            exec(code, newContext)
-        for k, v in newContext.items():
+            exec(code, new_context)
+        for k, v in new_context.items():
             if self.eval_context.get(k) != v: # difference!
                 # combine
                 if overwrite:
