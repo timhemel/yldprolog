@@ -290,7 +290,7 @@ class YP(object):
         except KeyError:
             raise YPException('Unknown predicate: %s/%d' % (name, arity))
 
-    def _updatePredicate(self, name, arity, clauses):
+    def _update_predicate(self, name, arity, clauses):
         self._predicates_store[(name.name(), arity)] = clauses
 
     def assertFact(self, name, values):
@@ -307,7 +307,7 @@ class YP(object):
         except YPException as e:
             clauses = []
         clauses.append(Answer(values))
-        self._updatePredicate(name, len(values), clauses)
+        self._update_predicate(name, len(values), clauses)
     def query(self, name, args):
         """Creates a Prolog query for the symbol name, with arguments args. name is a string,
         args is a list of Prolog terms. The query will only be constructed, but not evaluated.
