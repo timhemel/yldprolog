@@ -1,2 +1,0 @@
-
-* Dynamic programs that assert facts from Prolog.
