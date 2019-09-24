@@ -2,17 +2,22 @@
 
 import unittest
 import sys
-sys.path.insert(0,'..')
+import os
+import pathlib
+
+_scriptdir = os.path.dirname(__file__)
 
 from YP import YP
 from YP import Atom
 from YP import Variable
 from YP import Answer
 from YP import unify
+from YP import YPSuccess
 
 class TestYP(unittest.TestCase):
     def setUp(self):
         pass
+
     def testSetupYP(self):
         yp = YP()
         yp.assertFact(yp.atom('cat'),[yp.atom('tom')])
@@ -186,7 +191,7 @@ class TestYP(unittest.TestCase):
     # test loading a script
     def testLoadMonkeyAndBananaScript(self):
         yp = YP()
-        yp.loadScript('monkey.py')
+        yp.loadScript(pathlib.Path(_scriptdir) / 'monkey.py')
         # canget(state(atdoor,onfloor,atwindow,hasnot))
         q = yp.query('canget',[ yp.functor('state',[yp.atom('atdoor'),yp.atom('onfloor'),yp.atom('atwindow'),yp.atom('hasnot')])])
         # this query has infinitely many solutions, just get the first one
@@ -197,8 +202,8 @@ class TestYP(unittest.TestCase):
     def testLoadScriptsConcurrently(self):
         yp1 = YP()
         yp2 = YP()
-        yp1.loadScript('script1a.py')
-        yp2.loadScript('script1b.py')
+        yp1.loadScript(pathlib.Path(_scriptdir) / 'script1a.py')
+        yp2.loadScript(pathlib.Path(_scriptdir) / 'script1b.py')
         X1 = yp1.variable()
         q1 = yp1.query('fact',[X1])
         X2 = yp2.variable()
@@ -240,7 +245,7 @@ class TestYP(unittest.TestCase):
 
     def testRunInfiniteScript(self):
         yp = YP()
-        yp.loadScript('monkey.py')
+        yp.loadScript(pathlib.Path(_scriptdir) / 'monkey.py')
         # canget(state(atdoor,onfloor,atwindow,hasnot))
         q = yp.query('canget',[ yp.functor('state',[yp.atom('atdoor'),yp.atom('onfloor'),yp.atom('atwindow'),yp.atom('hasnot')])])
         # this query has infinitely many solutions, just get the first one
@@ -251,7 +256,7 @@ class TestYP(unittest.TestCase):
 
     def testRunListsScript(self):
         yp = YP()
-        yp.loadScript('lists.py')
+        yp.loadScript(pathlib.Path(_scriptdir) / 'lists.py')
         l = yp.makelist([yp.atom(x) for x in ['Johnny','Dee Dee','Joey','Tommy','Marky','Richie','Elvis','C. J.']])
         q = yp.query('member',[ yp.atom('Richie'), l ])
         r = [ x for x in q ]
@@ -265,15 +270,15 @@ class TestYP(unittest.TestCase):
 
     def testSploitEval(self):
         yp = YP()
-        yp.loadScript('eval.py')
+        yp.loadScript(pathlib.Path(_scriptdir) / 'eval.py')
         q = yp.query('sploit', ['1+1'])
         r = [ x for x in q ]
         self.assertEquals(r,[])
 
     def testLoadScriptsAddMultipleDefinitions(self):
         yp = YP()
-        yp.loadScript('defs1.py',overwrite=False)
-        yp.loadScript('defs2.py',overwrite=False)
+        yp.loadScript(pathlib.Path(_scriptdir) / 'defs1.py',overwrite=False)
+        yp.loadScript(pathlib.Path(_scriptdir) / 'defs2.py',overwrite=False)
         v1 = yp.variable()
         v2 = yp.variable()
         v3 = yp.variable()
@@ -286,8 +291,8 @@ class TestYP(unittest.TestCase):
 
     def testLoadScriptsOverwriteMultipleDefinitions(self):
         yp = YP()
-        yp.loadScript('defs1.py',overwrite=True)
-        yp.loadScript('defs2.py',overwrite=True)
+        yp.loadScript(pathlib.Path(_scriptdir) / 'defs1.py',overwrite=True)
+        yp.loadScript(pathlib.Path(_scriptdir) / 'defs2.py',overwrite=True)
         v1 = yp.variable()
         v2 = yp.variable()
         v3 = yp.variable()
@@ -306,8 +311,8 @@ class TestYP(unittest.TestCase):
 
     def testLoadScriptsWithDependenciesInOrder(self):
         yp = YP()
-        yp.loadScript('subscript.py',overwrite=False)
-        yp.loadScript('mainscript.py',overwrite=False)
+        yp.loadScript(pathlib.Path(_scriptdir) / 'subscript.py',overwrite=False)
+        yp.loadScript(pathlib.Path(_scriptdir) / 'mainscript.py',overwrite=False)
         v1 = yp.variable()
         q = yp.query('main', [v1])
         r = [ v1.getValue() for x in q ]
@@ -315,8 +320,8 @@ class TestYP(unittest.TestCase):
 
     def testLoadScriptsWithDependenciesOutOfOrder(self):
         yp = YP()
-        yp.loadScript('mainscript.py',overwrite=False)
-        yp.loadScript('subscript.py',overwrite=False)
+        yp.loadScript(pathlib.Path(_scriptdir) / 'mainscript.py',overwrite=False)
+        yp.loadScript(pathlib.Path(_scriptdir) / 'subscript.py',overwrite=False)
         v1 = yp.variable()
         q = yp.query('main', [v1])
         r = [ v1.getValue() for x in q ]
@@ -324,7 +329,7 @@ class TestYP(unittest.TestCase):
 
     def testLoadClausesWithFunctors(self):
         yp = YP()
-        yp.loadScript('geometricobjects.py',overwrite=False)
+        yp.loadScript(pathlib.Path(_scriptdir) / 'geometricobjects.py',overwrite=False)
         Y = yp.variable()
         q = yp.query('horizontal', [
             yp.functor('seg', [
