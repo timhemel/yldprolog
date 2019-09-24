@@ -39,12 +39,12 @@ class Variable(IUnifiable):
     """A Prolog variable. Variables can be inspected while iterating through the results of
     a query."""
     def __init__(self):
-        self._isBound = False
+        self._is_bound = False
     def getValue(self):
         """if the variable is bound, return the bound value, otherwise return the variable
         object itself. Will resolve the value recursively for variables that are bound to
         another variable."""
-        if not self._isBound: return self
+        if not self._is_bound: return self
         if isinstance(self._value, Variable):
             return self._value.getValue()
         return self._value
@@ -54,20 +54,20 @@ class Variable(IUnifiable):
             return None
         return to_python(v)
     def __str__(self):
-        if self._isBound:
+        if self._is_bound:
             return "var(%s)" % self._value
         return "var()"
     def unify(self, arg):
-        if not self._isBound:
+        if not self._is_bound:
             self._value = getValue(arg)
             if self._value == self:
                 yield False
             else:
-                self._isBound = True
+                self._is_bound = True
                 try:
                     yield False
                 finally:
-                    self._isBound = False
+                    self._is_bound = False
         else: # is bound
             for l1 in unify(self, arg):
                 yield False
