@@ -25,7 +25,7 @@ class TestYP(unittest.TestCase):
         args = [V1]
         # q = yp.matchDynamic(yp.atom('cat'),args)
         q = yp.query('cat',args)
-        r = [ [ v.getValue() for v in args ] for r in q ]
+        r = [ [ v.get_value() for v in args ] for r in q ]
         self.assertEqual(r, [ [yp.atom('tom')] ])
 
     def testEvaluateBoundedProjectionFunction(self):
@@ -33,7 +33,7 @@ class TestYP(unittest.TestCase):
         yp.assertFact(yp.atom('cat'),[yp.atom('tom')])
         V1 = yp.variable()
         q = yp.query('cat',[V1])
-        r = yp.evaluateBounded(q,(lambda x: V1.getValue()))
+        r = yp.evaluateBounded(q,(lambda x: V1.get_value()))
         self.assertEqual(r, [ yp.atom('tom') ])
 
     def testMatchExampleHorizontalVertical(self):
@@ -83,7 +83,7 @@ class TestYP(unittest.TestCase):
                 
         r0 = [ r for r in q0 ]
         r1 = [ r for r in q1 ]
-        r2 = [ Y.getValue() for r in q2 ]
+        r2 = [ Y.get_value() for r in q2 ]
 
         self.assertEqual(r0,[False])
         self.assertEqual(r1,[])
@@ -99,7 +99,7 @@ class TestYP(unittest.TestCase):
         yp = YP()
         a = Answer([yp.atom('tom')])
         v = yp.variable()
-        r = [v.getValue() for x in a.match([v])]
+        r = [v.get_value() for x in a.match([v])]
         self.assertEqual(r,[yp.atom('tom')])
     def testMatchAnswerNotMatching(self):
         yp = YP()
@@ -125,26 +125,26 @@ class TestYP(unittest.TestCase):
         yp = YP()
         a1 = yp.atom('tom')
         v1 = yp.variable()
-        r = [ v1.getValue() for x in unify(v1,a1) ]
+        r = [ v1.get_value() for x in unify(v1,a1) ]
         # self.assertEqual(r,[False])
         self.assertEqual(r,[yp.atom('tom')])
     def testUnifyVariableInteger(self):
         yp = YP()
         v1 = yp.variable()
-        r = [ v1.getValue() for x in unify(v1,5) ]
+        r = [ v1.get_value() for x in unify(v1,5) ]
         self.assertEqual(r,[5])
     def testUnifyVariableWithVariable(self):
         yp = YP()
         v1 = yp.variable()
         v2 = yp.variable()
-        r = [ (v1.getValue(),v2.getValue()) for x in unify(v1,v2) ]
+        r = [ (v1.get_value(),v2.get_value()) for x in unify(v1,v2) ]
         self.assertEqual(len(r),1)
         self.assertEqual(r[0][0],r[0][1])
     def testUnifyVariableComplexAtom(self):
         yp = YP()
         a1 = yp.functor("point",[1,1])
         v1 = yp.variable()
-        r = [ v1.getValue() for x in unify(v1,a1) ]
+        r = [ v1.get_value() for x in unify(v1,a1) ]
         self.assertEqual(r,[a1])
     def testUnifyComplexAtoms(self):
         yp = YP()
@@ -152,14 +152,14 @@ class TestYP(unittest.TestCase):
         v2 = yp.variable()
         a1 = yp.functor("point",[v1,2])
         a2 = yp.functor("point",[1,v2])
-        r = [ (v1.getValue(),v2.getValue()) for x in unify(a1,a2) ]
+        r = [ (v1.get_value(),v2.get_value()) for x in unify(a1,a2) ]
         self.assertEqual(r,[(1,2)])
     def testUnifyComplexAtomsNotMatching(self):
         yp = YP()
         v1 = yp.variable()
         a1 = yp.functor("point",[v1,2])
         a2 = yp.functor("point",[1,1])
-        r = [ v1.getValue() for x in unify(a1,a2) ]
+        r = [ v1.get_value() for x in unify(a1,a2) ]
         self.assertEqual(r,[])
     def testUnifyComplexAtomsFreeVariable(self):
         yp = YP()
@@ -167,7 +167,7 @@ class TestYP(unittest.TestCase):
         v2 = yp.variable()
         a1 = yp.functor("point",[v1,2])
         a2 = yp.functor("point",[v2,2])
-        r = [ (v1.getValue(),v2.getValue()) for x in unify(a1,a2) ]
+        r = [ (v1.get_value(),v2.get_value()) for x in unify(a1,a2) ]
         self.assertEqual(len(r),1)
         self.assertEqual(r[0][0],r[0][1])
 
@@ -177,7 +177,7 @@ class TestYP(unittest.TestCase):
         v1 = yp.variable()
         l1 = yp.listpair(yp.atom("a"), yp.listpair(yp.atom("b"),yp.ATOM_NIL))
         l2 = yp.listpair(yp.atom("a"), yp.listpair(v1,yp.ATOM_NIL))
-        r = [ v1.getValue() for x in unify(l1,l2) ]
+        r = [ v1.get_value() for x in unify(l1,l2) ]
         self.assertEqual(r,[yp.atom("b")])
 
     def testUnifyListsWithMakelist(self):
@@ -185,7 +185,7 @@ class TestYP(unittest.TestCase):
         v1 = yp.variable()
         l1 = yp.listpair(yp.atom("a"), yp.listpair(yp.atom("b"),yp.ATOM_NIL))
         l2 = yp.makelist([yp.atom("a"),v1])
-        r = [ v1.getValue() for x in unify(l1,l2) ]
+        r = [ v1.get_value() for x in unify(l1,l2) ]
         self.assertEqual(r,[yp.atom("b")])
 
     # test loading a script
@@ -208,8 +208,8 @@ class TestYP(unittest.TestCase):
         q1 = yp1.query('fact',[X1])
         X2 = yp2.variable()
         q2 = yp2.query('fact',[X2])
-        r1 = [ X1.getValue() for r in q1 ]
-        r2 = [ X2.getValue() for r in q2 ]
+        r1 = [ X1.get_value() for r in q1 ]
+        r2 = [ X2.get_value() for r in q2 ]
         self.assertNotEqual(r1,r2)
 
     # test concurrency when asserting facts
@@ -222,8 +222,8 @@ class TestYP(unittest.TestCase):
         q1 = yp1.query('fact',[X1])
         X2 = yp2.variable()
         q2 = yp2.query('fact',[X2])
-        r1 = [ X1.getValue() for r in q1 ]
-        r2 = [ X2.getValue() for r in q2 ]
+        r1 = [ X1.get_value() for r in q1 ]
+        r2 = [ X2.get_value() for r in q2 ]
         self.assertNotEqual(r1,r2)
 
     # test implicit clauses with user defined functions
@@ -265,7 +265,7 @@ class TestYP(unittest.TestCase):
         v2 = yp.variable()
         v3 = yp.variable()
         q = yp.query('testlist', [yp.makelist([v1,v2,v3])])
-        r = [ [v1.getValue(),v2.getValue(),v3.getValue()] for x in q ]
+        r = [ [v1.get_value(),v2.get_value(),v3.get_value()] for x in q ]
         self.assertEqual(r,[[yp.atom('red'),yp.atom('green'),yp.atom('blue')]])
 
     def testSploitEval(self):
@@ -283,7 +283,7 @@ class TestYP(unittest.TestCase):
         v2 = yp.variable()
         v3 = yp.variable()
         q = yp.query('testlist', [yp.makelist([v1,v2,v3])])
-        r = [ (v1.getValue(),v2.getValue(),v3.getValue()) for x in q ]
+        r = [ (v1.get_value(),v2.get_value(),v3.get_value()) for x in q ]
         self.assertEqual(set(r),set([
             (yp.atom('red'),yp.atom('green'),yp.atom('blue')),
             (yp.atom('cyan'),yp.atom('magenta'),yp.atom('yellow'))
@@ -297,7 +297,7 @@ class TestYP(unittest.TestCase):
         v2 = yp.variable()
         v3 = yp.variable()
         q = yp.query('testlist', [yp.makelist([v1,v2,v3])])
-        r = [ (v1.getValue(),v2.getValue(),v3.getValue()) for x in q ]
+        r = [ (v1.get_value(),v2.get_value(),v3.get_value()) for x in q ]
         self.assertEqual(set(r),set([
             (yp.atom('cyan'),yp.atom('magenta'),yp.atom('yellow'))
         ]))
@@ -315,7 +315,7 @@ class TestYP(unittest.TestCase):
         yp.loadScript(pathlib.Path(_scriptdir) / 'mainscript.py',overwrite=False)
         v1 = yp.variable()
         q = yp.query('main', [v1])
-        r = [ v1.getValue() for x in q ]
+        r = [ v1.get_value() for x in q ]
         self.assertEqual(r,[yp.atom('yes'),yp.atom('no'),yp.atom('maybe')])
 
     def testLoadScriptsWithDependenciesOutOfOrder(self):
@@ -324,7 +324,7 @@ class TestYP(unittest.TestCase):
         yp.loadScript(pathlib.Path(_scriptdir) / 'subscript.py',overwrite=False)
         v1 = yp.variable()
         q = yp.query('main', [v1])
-        r = [ v1.getValue() for x in q ]
+        r = [ v1.get_value() for x in q ]
         self.assertEqual(r,[yp.atom('yes'),yp.atom('no'),yp.atom('maybe')])
 
     def testLoadClausesWithFunctors(self):
@@ -337,7 +337,7 @@ class TestYP(unittest.TestCase):
                 yp.functor('point',[2,Y])
             ])
         ])
-        r = [ Y.getValue() for x in q ]
+        r = [ Y.get_value() for x in q ]
         self.assertEqual(r,[1])
 
  

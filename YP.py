@@ -23,7 +23,7 @@ class Atom(IUnifiable):
     def __str__(self):
         return "atom(%s)" % self._name
     def unify(self, term):
-        arg = getValue(term)
+        arg = get_value(term)
         if isinstance(arg, Atom):
             if self._name == arg._name:
                 return YPSuccess()
@@ -40,16 +40,16 @@ class Variable(IUnifiable):
     a query."""
     def __init__(self):
         self._is_bound = False
-    def getValue(self):
+    def get_value(self):
         """if the variable is bound, return the bound value, otherwise return the variable
         object itself. Will resolve the value recursively for variables that are bound to
         another variable."""
         if not self._is_bound: return self
         if isinstance(self._value, Variable):
-            return self._value.getValue()
+            return self._value.get_value()
         return self._value
     def to_python(self):
-        v = self.getValue()
+        v = self.get_value()
         if isinstance(v, Variable):
             return None
         return to_python(v)
@@ -59,7 +59,7 @@ class Variable(IUnifiable):
         return "var()"
     def unify(self, arg):
         if not self._is_bound:
-            self._value = getValue(arg)
+            self._value = get_value(arg)
             if self._value == self:
                 yield False
             else:
@@ -93,7 +93,7 @@ class Functor(IUnifiable):
         args = ",".join([str(a) for a in self._args])
         return "%s(%s)" % (self._name, args)
     def unify(self, term):
-        arg = getValue(term)
+        arg = get_value(term)
         if isinstance(arg, Functor):
             if self._name == arg._name:
                 return unifyArrays(self._args, arg._args)
@@ -141,11 +141,11 @@ def chainFunctions(func1, func2):
         return itertools.chain(*[f(*args) for f in funcs])
     return chain
 
-def getValue(v):
+def get_value(v):
     """Return the value of a Prolog term. Constants and functors will return themselves,
     variables will be expanded if bound. Does not recursively expand variables."""
     if isinstance(v, Variable):
-        return v.getValue()
+        return v.get_value()
     return v
 
 def to_python(v):
@@ -157,8 +157,8 @@ def to_python(v):
 def unify(term1, term2):
     """Tries to unify term1 and term2. After unification, variables in the terms will be bound.
     """
-    arg1 = getValue(term1)
-    arg2 = getValue(term2)
+    arg1 = get_value(term1)
+    arg2 = get_value(term2)
     # print "Unify:\n\t", term1,"\n\t", term2
     if isinstance(arg1, IUnifiable):
         return arg1.unify(arg2)
@@ -318,7 +318,7 @@ class YP(object):
         yp.assertFact(yp.atom('cat'),[yp.atom('tom')])
         V1 = yp.variable()
         q = yp.query('cat',[V1])
-        r = [ V1.getValue() for r in q ]
+        r = [ V1.get_value() for r in q ]
         assert r == [ yp.atom('tom') ]
         """
         try:
@@ -343,7 +343,7 @@ class YP(object):
         yp.assertFact(yp.atom('cat'),[yp.atom('tom')])
         V1 = yp.variable()
         q = yp.query('cat',[V1])
-        r = yp.evaluateBounded(q,(lambda x: V1.getValue()))
+        r = yp.evaluateBounded(q,(lambda x: V1.get_value()))
         assert r == [ yp.atom('tom') ]
         """
         old_recursionlimit = sys.getrecursionlimit()
