@@ -44,7 +44,8 @@ class Variable(IUnifiable):
         """if the variable is bound, return the bound value, otherwise return the variable
         object itself. Will resolve the value recursively for variables that are bound to
         another variable."""
-        if not self._is_bound: return self
+        if not self._is_bound:
+            return self
         if isinstance(self._value, Variable):
             return self._value.get_value()
         return self._value
