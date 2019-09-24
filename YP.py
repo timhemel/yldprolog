@@ -293,7 +293,7 @@ class YP(object):
     def _update_predicate(self, name, arity, clauses):
         self._predicates_store[(name.name(), arity)] = clauses
 
-    def assertFact(self, name, values):
+    def assert_fact(self, name, values):
         """From the original YieldProlog:
 
         assert values at the end of the set of facts for the predicate with the
@@ -316,7 +316,7 @@ class YP(object):
         Example:
 
         yp = YP()
-        yp.assertFact(yp.atom('cat'),[yp.atom('tom')])
+        yp.assert_fact(yp.atom('cat'),[yp.atom('tom')])
         V1 = yp.variable()
         q = yp.query('cat',[V1])
         r = [ V1.get_value() for r in q ]
@@ -341,7 +341,7 @@ class YP(object):
         to anything else, for example the value of an instantiated Variable.
 
         yp = YP()
-        yp.assertFact(yp.atom('cat'),[yp.atom('tom')])
+        yp.assert_fact(yp.atom('cat'),[yp.atom('tom')])
         V1 = yp.variable()
         q = yp.query('cat',[V1])
         r = yp.evaluateBounded(q,(lambda x: V1.get_value()))

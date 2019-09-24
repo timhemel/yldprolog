@@ -20,7 +20,7 @@ class TestYP(unittest.TestCase):
 
     def testSetupYP(self):
         yp = YP()
-        yp.assertFact(yp.atom('cat'),[yp.atom('tom')])
+        yp.assert_fact(yp.atom('cat'),[yp.atom('tom')])
         V1 = yp.variable()
         args = [V1]
         # q = yp.matchDynamic(yp.atom('cat'),args)
@@ -30,7 +30,7 @@ class TestYP(unittest.TestCase):
 
     def testEvaluateBoundedProjectionFunction(self):
         yp = YP()
-        yp.assertFact(yp.atom('cat'),[yp.atom('tom')])
+        yp.assert_fact(yp.atom('cat'),[yp.atom('tom')])
         V1 = yp.variable()
         q = yp.query('cat',[V1])
         r = yp.evaluateBounded(q,(lambda x: V1.get_value()))
@@ -43,14 +43,14 @@ class TestYP(unittest.TestCase):
         X1 = yp.variable()
         Y1 = yp.variable()
         # vertical(seg(point(X,Y),point(X,Y1))).
-        yp.assertFact(yp.atom('vertical'), [
+        yp.assert_fact(yp.atom('vertical'), [
             yp.functor('seg', [
                 yp.functor('point',[X,Y]),
                 yp.functor('point',[X,Y1])
             ])
         ])
         # horizontal(seg(point(X,Y),point(X1,Y))).
-        yp.assertFact(yp.atom('horizontal'), [
+        yp.assert_fact(yp.atom('horizontal'), [
             yp.functor('seg', [
                 yp.functor('point',[X,Y]),
                 yp.functor('point',[X1,Y])
@@ -216,8 +216,8 @@ class TestYP(unittest.TestCase):
     def testAssertFactsConcurrently(self):
         yp1 = YP()
         yp2 = YP()
-        yp1.assertFact(yp1.atom('fact'), [yp1.atom('red')])
-        yp2.assertFact(yp2.atom('fact'), [yp2.atom('blue')])
+        yp1.assert_fact(yp1.atom('fact'), [yp1.atom('red')])
+        yp2.assert_fact(yp2.atom('fact'), [yp2.atom('blue')])
         X1 = yp1.variable()
         q1 = yp1.query('fact',[X1])
         X2 = yp2.variable()
