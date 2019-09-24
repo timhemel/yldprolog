@@ -136,7 +136,7 @@ class YPSuccess(object):
     def close(self):
         pass
 
-def chainFunctions(func1, func2):
+def chain_functions(func1, func2):
     funcs = [f for f in [func1, func2] if f != None]
     def chain(*args):
         return itertools.chain(*[f(*args) for f in funcs])
@@ -272,7 +272,7 @@ class YP(object):
                     self.evalContext[k] = v
                 else:
                     # self.evalContext[k] = itertools.chain(self.evalContext.get(k,[]),v)
-                    self.evalContext[k] = chainFunctions(self.evalContext.get(k), v)
+                    self.evalContext[k] = chain_functions(self.evalContext.get(k), v)
         # TODO: raise YPEngineException if loading fails
         # print "Loaded script"
         #for k,v in self.evalContext.items():
