@@ -177,17 +177,17 @@ def unify_arrays(array1, array2):
         return
     iterators = [None]*len(array1)
     num_iterators = 0
-    gotMatch = True
+    got_match = True
     for i in range(len(array1)):
         iterators[i] = iter(unify(array1[i], array2[i]))
         num_iterators += 1
         try:
             next(iterators[i])
         except StopIteration:
-            gotMatch = False
+            got_match = False
             break
     try:
-        if gotMatch:
+        if got_match:
             yield False
     finally:
         for i in range(num_iterators):
