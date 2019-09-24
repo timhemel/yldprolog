@@ -128,4 +128,6 @@ compiler/prologLexer.tokens
 compiler/prologListener.py
 compiler/prologParser.py
 compiler/prologVisitor.py
+compiler/prolog.interp
+compiler/prologLexer.interp
 
