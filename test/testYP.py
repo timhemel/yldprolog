@@ -190,7 +190,7 @@ class TestYP(unittest.TestCase):
         # canget(state(atdoor,onfloor,atwindow,hasnot))
         q = yp.query('canget',[ yp.functor('state',[yp.atom('atdoor'),yp.atom('onfloor'),yp.atom('atwindow'),yp.atom('hasnot')])])
         # this query has infinitely many solutions, just get the first one
-        self.assertEquals(q.next(),False)
+        self.assertEquals(next(q),False)
 
 
     # test concurrency when sourcing scripts

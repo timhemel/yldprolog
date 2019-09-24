@@ -1,5 +1,6 @@
 import sys
 import itertools
+from functools import reduce
 
 class YPException(Exception):
     pass
@@ -114,7 +115,7 @@ class YPFail(object):
     """Iterator that always stops."""
     def __iter__(self):
         return self
-    def next(self):
+    def __next__(self):
         raise StopIteration
     def close(self):
         pass
@@ -125,7 +126,7 @@ class YPSuccess(object):
         self._done = False
     def __iter__(self):
         return self
-    def next(self):
+    def __next__(self):
         if not self._done:
             self._done = True
             return False
@@ -180,7 +181,7 @@ def unifyArrays(array1,array2):
         iterators[i] = iter(unify(array1[i],array2[i]))
         numIterators += 1
         try:
-            iterators[i].next()
+            next(iterators[i])
         except StopIteration:
             gotMatch = False
             break
@@ -260,7 +261,9 @@ class YP(object):
         number of arguments will be overwritten or combined. This could cause runtime errors.
         """
         newContext = self.evalContext.copy()
-        execfile(fn,newContext)
+        code = compile(open(fn,"r").read(), fn, 'exec')
+        exec(code, newContext)
+        # execfile(fn,newContext)
         for k,v in newContext.items():
             if self.evalContext.get(k) != v: # difference!
                 # combine
@@ -300,7 +303,7 @@ class YP(object):
         try:
             clauses = self._findPredicates(name.name(),len(values))
             # indexedanswers
-        except YPException,e:
+        except YPException as e:
             clauses = []
         clauses.append(Answer(values))
         self._updatePredicate(name,len(values),clauses)
@@ -322,9 +325,9 @@ class YP(object):
             if name not in self.evalBlacklist:
                 function = self.evalContext[name]
                 return function(*args)
-        except KeyError,e:
+        except KeyError as e:
             pass
-        except TypeError,e: # args not matching
+        except TypeError as e: # args not matching
             pass
 
         return self.matchDynamic(self.atom(name),args)
