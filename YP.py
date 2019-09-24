@@ -254,7 +254,7 @@ class YP(object):
         r = reduce(lambda x, y: self.listpair(y, x), reversed(l), self.ATOM_NIL)
         return r
 
-    def loadScript(self, fn, overwrite=True):
+    def load_script(self, fn, overwrite=True):
         """Loads a compiled Prolog program. Any functions defined in this program will be
         available to the engine and can be used in queries.
         If overwrite is True, it will overwrite existing function definitions. Otherwise,
