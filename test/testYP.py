@@ -23,7 +23,7 @@ class TestYP(unittest.TestCase):
         yp.assert_fact(yp.atom('cat'),[yp.atom('tom')])
         V1 = yp.variable()
         args = [V1]
-        # q = yp.matchDynamic(yp.atom('cat'),args)
+        # q = yp.match_dynamic(yp.atom('cat'),args)
         q = yp.query('cat',args)
         r = [ [ v.get_value() for v in args ] for r in q ]
         self.assertEqual(r, [ [yp.atom('tom')] ])
@@ -57,7 +57,7 @@ class TestYP(unittest.TestCase):
             ])
         ])
 
-        # q0 = yp.matchDynamic(yp.atom('vertical'), [
+        # q0 = yp.match_dynamic(yp.atom('vertical'), [
         q0 = yp.query('vertical', [
             yp.functor('seg', [
                 yp.functor('point',[1,1]),
@@ -65,7 +65,7 @@ class TestYP(unittest.TestCase):
             ])
         ])
 
-        # q1 = yp.matchDynamic(yp.atom('vertical'), [
+        # q1 = yp.match_dynamic(yp.atom('vertical'), [
         q1 = yp.query('vertical', [
             yp.functor('seg', [
                 yp.functor('point',[1,1]),
@@ -73,7 +73,7 @@ class TestYP(unittest.TestCase):
             ])
         ])
 
-        # q2 = yp.matchDynamic(yp.atom('horizontal'), [
+        # q2 = yp.match_dynamic(yp.atom('horizontal'), [
         q2 = yp.query('horizontal', [
             yp.functor('seg', [
                 yp.functor('point',[1,1]),

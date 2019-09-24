@@ -213,7 +213,7 @@ class YP(object):
             'makelist': self.makelist,
             'ATOM_NIL': self.ATOM_NIL,
             'unify': unify,
-            'matchDynamic': self.matchDynamic,
+            'match_dynamic': self.match_dynamic,
             'query': self.query,
             'True': True,
             'False': False,
@@ -331,7 +331,7 @@ class YP(object):
         except TypeError as e: # args not matching
             pass
 
-        return self.matchDynamic(self.atom(name), args)
+        return self.match_dynamic(self.atom(name), args)
 
     def evaluate_bounded(self, query, projection_function, recursion_limit=200):
         """Evaluates a query, but limits the recursion depth to recursion_limit. If a query
@@ -362,7 +362,7 @@ class YP(object):
             sys.setrecursionlimit(old_recursionlimit)
         return result
 
-    def matchDynamic(self, name, args):
+    def match_dynamic(self, name, args):
         """From the original YieldProlog:
 
         Match all clauses of the dynamic predicate with the name and with arity the length
