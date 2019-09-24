@@ -97,7 +97,7 @@ class Functor(IUnifiable):
         arg = get_value(term)
         if isinstance(arg, Functor):
             if self._name == arg._name:
-                return unifyArrays(self._args, arg._args)
+                return unify_arrays(self._args, arg._args)
             else:
                 return YPFail()
         elif isinstance(arg, Variable):
@@ -110,7 +110,7 @@ class Answer:
     def __init__(self, values):
         self.values = values
     def match(self, args):
-        return unifyArrays(args, self.values)
+        return unify_arrays(args, self.values)
 
 class YPFail(object):
     """Iterator that always stops."""
@@ -171,7 +171,7 @@ def unify(term1, term2):
         else:
             return YPFail()
 
-def unifyArrays(array1, array2):
+def unify_arrays(array1, array2):
     """Unifies two lists of terms."""
     if len(array1) != len(array2):
         return
