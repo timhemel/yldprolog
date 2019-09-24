@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from prologVisitor import prologVisitor
+from functools import reduce
 
 class PredicateList:
     def __init__(self,head,tail):

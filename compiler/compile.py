@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys
 from antlr4 import *
@@ -40,7 +40,7 @@ class CompilerApp:
         code = compiler.compileProgram(program)
         generator = YPPythonCodeGenerator()
         pythoncode = generator.generate(code)
-        print pythoncode
+        print(pythoncode)
 
 if __name__=="__main__":
     CompilerApp().run()
