@@ -176,11 +176,11 @@ def unify_arrays(array1, array2):
     if len(array1) != len(array2):
         return
     iterators = [None]*len(array1)
-    numIterators = 0
+    num_iterators = 0
     gotMatch = True
     for i in range(len(array1)):
         iterators[i] = iter(unify(array1[i], array2[i]))
-        numIterators += 1
+        num_iterators += 1
         try:
             next(iterators[i])
         except StopIteration:
@@ -190,7 +190,7 @@ def unify_arrays(array1, array2):
         if gotMatch:
             yield False
     finally:
-        for i in range(numIterators):
+        for i in range(num_iterators):
             iterators[i].close()
 
 
