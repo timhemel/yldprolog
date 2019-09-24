@@ -6,10 +6,8 @@ import os
 import pathlib
 from YP import YP
 from YP import Atom
-from YP import Variable
 from YP import Answer
 from YP import unify
-from YP import YPSuccess
 
 _SCRIPT_DIR = os.path.dirname(__file__)
 
