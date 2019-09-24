@@ -372,11 +372,11 @@ class YP(object):
         """
         try:
             clauses = self._find_predicates(name.name(), len(args))
-            return self._matchAllClauses(clauses, args)
+            return self._match_all_clauses(clauses, args)
         except YPException:
             return YPFail()
 
-    def _matchAllClauses(self, clauses, args):
+    def _match_all_clauses(self, clauses, args):
         for clause in clauses:
             for cut in clause.match(args):
                 yield False
