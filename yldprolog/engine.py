@@ -223,6 +223,10 @@ class YP(object):
         self._predicates_store = {}
         self.ATOM_NIL = self.atom("[]")
         self.ATOM_DOT = "."
+        self._set_default_eval_context()
+        self.eval_blacklist = list(self.eval_context.keys())
+
+    def _set_default_eval_context(self):
         self.eval_context = {
             '__builtins__': {},
             'variable': self.variable,
@@ -240,7 +244,13 @@ class YP(object):
             'True': True,
             'False': False,
         }
-        self.eval_blacklist = list(self.eval_context.keys())
+
+    def clear(self):
+        """clears all defined atoms, variables, facts and rules."""
+        self._atom_store = {}
+        self._predicates_store = {}
+        self._set_default_eval_context()
+
     def atom(self, name, module=None):
         """Create an atom with name name in this engine. The parameter module is ignored and
         present to be compatible with the output from the modified YieldProlog compiler.

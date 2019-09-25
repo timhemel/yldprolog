@@ -46,6 +46,18 @@ class TestYP(unittest.TestCase):
         r = [[v.get_value() for v in args] for r in q]
         self.assertEqual(r, [[yp.atom('tom')]])
 
+    def test_clear(self):
+        yp = YP()
+        yp.assert_fact(yp.atom('cat'), [yp.atom('tom')])
+        yp.clear()
+        V1 = yp.variable()
+        args = [V1]
+        # q = yp.match_dynamic(yp.atom('cat'),args)
+        q = yp.query('cat', args)
+        r = [[v.get_value() for v in args] for r in q]
+        self.assertEqual(r, [])
+
+
     def test_evaluate_bounded_projection_function(self):
         yp = YP()
         yp.assert_fact(yp.atom('cat'), [yp.atom('tom')])
