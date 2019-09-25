@@ -131,3 +131,4 @@ yldprolog/prologVisitor.py
 yldprolog/prolog.interp
 yldprolog/prologLexer.interp
 
+test/data/*.py
