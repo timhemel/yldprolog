@@ -22,7 +22,7 @@ setuptools.setup(
     keywords=['prolog'],
     packages=setuptools.find_packages(include=['yldprolog'], exclude=['test']),
     entry_points={
-        'console_scripts': ['yldpc=yldprolog.compile:main']
+        'console_scripts': ['yldpc=yldprolog.compiler:main']
     },
     python_requires='>=3.6',
 )
