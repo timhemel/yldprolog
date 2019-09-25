@@ -1,4 +1,4 @@
-TEST_PROLOG_SOURCES=$(wildcard test/*.prolog)
+TEST_PROLOG_SOURCES=$(wildcard test/data/*.prolog)
 TEST_PROLOG_TARGETS=$(TEST_PROLOG_SOURCES:.prolog=.py)
 
 PROLOG_COMPILE=python -m yldprolog.compiler
