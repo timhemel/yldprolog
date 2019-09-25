@@ -1,3 +1,9 @@
+%
+% The following Prolog code is based on the example "monkey and banana"
+% from: Ivan Bratko, Prolog Programming for Artificial Intelligence,
+% third edition. ISBN 0-201-40375-7.
+%
+
 move(state(middle,onbox,middle,hasnot),
      grasp,
      state(middle,onbox,middle,has)).
