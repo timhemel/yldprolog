@@ -20,10 +20,9 @@ setuptools.setup(
         "Operating System :: OS Independent"
     ],
     keywords=['prolog'],
-    packages=setuptools.find_packages(include=['compiler'], exclude=['test']),
-    py_modules=['yldprolog'],
+    packages=setuptools.find_packages(include=['yldprolog'], exclude=['test']),
     entry_points={
-        'console_scripts': ['yldpc=compiler.compile:main']
+        'console_scripts': ['yldpc=yldprolog.compile:main']
     },
     python_requires='>=3.6',
 )
