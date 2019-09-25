@@ -25,10 +25,10 @@ import unittest
 import sys
 import os
 import pathlib
-from yldprolog import YP
-from yldprolog import Atom
-from yldprolog import Answer
-from yldprolog import unify
+from yldprolog.engine import YP
+from yldprolog.engine import Atom
+from yldprolog.engine import Answer
+from yldprolog.engine import unify
 
 _SCRIPT_DIR = os.path.dirname(__file__)
 
