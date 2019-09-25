@@ -24,12 +24,38 @@
 
 
 import sys
+import antlr4
 from antlr4 import *
 from .prologLexer import *
 from .prologParser import *
 from .YPPrologVisitor import *
 from .YPGenerator import *
 import argparse
+
+class DefaultCompilerOptions:
+    debug = False
+
+def compile_prolog_from_stream(inp, options):
+    lexer = prologLexer(inp)
+    stream = CommonTokenStream(lexer)
+    parser = prologParser(stream)
+    tree = parser.program()
+    visitor = YPPrologVisitor(options)
+    program = visitor.visit(tree)
+    compiler = YPPrologCompiler(options)
+    code = compiler.compileProgram(program)
+    generator = YPPythonCodeGenerator()
+    pythoncode = generator.generate(code)
+    return pythoncode
+
+
+def compile_prolog_from_string(source, options=DefaultCompilerOptions):
+    inp = antlr4.InputStream(source)
+    return compile_prolog_from_stream(inp, options)
+
+def compile_prolog_from_file(path, options=DefaultCompilerOptions):
+    inp = FileStream(path, encoding='utf8')
+    return compile_prolog_from_stream(inp, options)
 
 class CompilerApp:
     def __init__(self):
@@ -53,17 +79,8 @@ class CompilerApp:
                 self._error("Could not open input file '%s.'" % self.args.sourcefile)
                 sys.exit(1)
         self._debug(self.args)
-        lexer = prologLexer(inp)
-        stream = CommonTokenStream(lexer)
-        parser = prologParser(stream)
-        tree = parser.program()
-        visitor = YPPrologVisitor(self.args)
-        program = visitor.visit(tree)
-        compiler = YPPrologCompiler(self.args)
-        code = compiler.compileProgram(program)
-        generator = YPPythonCodeGenerator()
-        pythoncode = generator.generate(code)
-        print(pythoncode)
+        pythoncode = compile_prolog_from_stream(inp, self.args)
+        self.args.outfile.write(pythoncode)
 
 def main():
     CompilerApp().run()
