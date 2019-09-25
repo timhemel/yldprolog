@@ -30,7 +30,7 @@ import yldprolog.compiler
 _DATA_DIR = pathlib.Path(os.path.dirname(__file__)) / 'data'
 
 def strip_comments(s):
-    return re.sub(r'^#.*$', '', s, re.MULTILINE)
+    return re.sub(r'^#.*$', '', s, flags=re.MULTILINE).strip()
 
 class TestYldPrologCompiler(unittest.TestCase):
     def setUp(self):
