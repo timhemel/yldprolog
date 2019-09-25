@@ -24,7 +24,7 @@
 
 
 from .prologVisitor import prologVisitor
-from functools import reduce
+import functools
 
 class PredicateList:
     def __init__(self,head,tail):
@@ -131,7 +131,7 @@ class ListTerm(Term):
     def __str__(self):
         return "[%s]" % ",".join([ str(x) for x in self.items ])
     def getVariables(self):
-        return reduce(lambda x,y: x + y, [ v.getVariables() for v in self.items ], [])
+        return functools.reduce(lambda x,y: x + y, [ v.getVariables() for v in self.items ], [])
 
 class ListPairTerm(Term):
     def __init__(self,head,tail):
@@ -158,7 +158,7 @@ class Functor:
     def __str__(self):
         return "%s(%s)" % (str(self.name),",".join([str(a) for a in self.args]))
     def getVariables(self):
-        return reduce(lambda x,y: x + y, [ v.getVariables() for v in self.args ], [])
+        return functools.reduce(lambda x,y: x + y, [ v.getVariables() for v in self.args ], [])
 
 class Clause:
     def __init__(self,head,body):
@@ -278,7 +278,7 @@ class YPPrologVisitor(prologVisitor):
                 # listpair
                 termlist = self.visitTermlist(ctx.termlist())
                 var = self.visitVARIABLE(ctx.VARIABLE())
-                p = reduce(lambda x,y: ListPairTerm(y,x), reversed(termlist), var)
+                p = functools.reduce(lambda x,y: ListPairTerm(y,x), reversed(termlist), var)
                 return p
             if ctx.termlist() != None:
                 # list with content
