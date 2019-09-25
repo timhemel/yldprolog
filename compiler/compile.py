@@ -25,10 +25,10 @@
 
 import sys
 from antlr4 import *
-from prologLexer import *
-from prologParser import *
-from YPPrologVisitor import *
-from YPGenerator import *
+from .prologLexer import *
+from .prologParser import *
+from .YPPrologVisitor import *
+from .YPGenerator import *
 import argparse
 
 class CompilerApp:
@@ -65,7 +65,11 @@ class CompilerApp:
         pythoncode = generator.generate(code)
         print(pythoncode)
 
-if __name__=="__main__":
+def main():
     CompilerApp().run()
+
+if __name__=="__main__":
+    main()
+
 
 

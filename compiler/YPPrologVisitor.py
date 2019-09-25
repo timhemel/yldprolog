@@ -23,7 +23,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 
-from prologVisitor import prologVisitor
+from .prologVisitor import prologVisitor
 from functools import reduce
 
 class PredicateList:
