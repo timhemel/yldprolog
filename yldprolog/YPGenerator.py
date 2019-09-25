@@ -20,7 +20,7 @@
 # version 3
 # SPDX-License-Identifier: AGPL-3.0-only
 
-
+import functools
 from .YPPrologVisitor import *
 
 class YPCodeExpr:
@@ -152,7 +152,7 @@ class YPPrologCompiler:
     def compileProgram(self,program):
         funcs = []
         for func,clauses in program.items():
-            body = reduce(lambda x,y: x+y, [ self.compileFunctionBody(c) for c in clauses ], [] )
+            body = functools.reduce(lambda x,y: x+y, [ self.compileFunctionBody(c) for c in clauses ], [] )
             funcs.append(self.compileFunction(func,body))
         return YPCodeProgram(funcs)
     def compileFunctionBody(self,clause):
@@ -413,7 +413,7 @@ class YPPythonCodeGenerator:
     def generateCodeList(self,l):
         parts = [ c.generate(self) for c in l ]
         return self.lines(*parts)
-        # return reduce(lambda x,y: x+y, parts, [])
+        # return functools.reduce(lambda x,y: x+y, parts, [])
     def generateProgram(self,program):
         funcs = [ func.generate(self) + self.nl() for func in program.functions]
         return self.lines(*funcs)

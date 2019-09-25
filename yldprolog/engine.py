@@ -22,7 +22,7 @@
 
 import sys
 import itertools
-from functools import reduce
+import functools
 
 class YPException(Exception):
     pass
@@ -273,7 +273,7 @@ class YP(object):
         return Functor(self.ATOM_DOT, [head, tail])
     def makelist(self, l):
         """Creates a Prolog list from a Python list. l is a list of Prolog terms."""
-        r = reduce(lambda x, y: self.listpair(y, x), reversed(l), self.ATOM_NIL)
+        r = functools.reduce(lambda x, y: self.listpair(y, x), reversed(l), self.ATOM_NIL)
         return r
 
     def load_script(self, fn, overwrite=True):
