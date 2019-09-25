@@ -30,7 +30,7 @@ from yldprolog.engine import Atom
 from yldprolog.engine import Answer
 from yldprolog.engine import unify
 
-_SCRIPT_DIR = os.path.dirname(__file__)
+_DATA_DIR = pathlib.Path(os.path.dirname(__file__)) / 'data'
 
 class TestYP(unittest.TestCase):
     def setUp(self):
@@ -215,7 +215,7 @@ class TestYP(unittest.TestCase):
     # test loading a script
     def test_load_monkey_and_banana_script(self):
         yp = YP()
-        yp.load_script(pathlib.Path(_SCRIPT_DIR) / 'monkey.py')
+        yp.load_script(_DATA_DIR / 'monkey.py')
         # canget(state(atdoor,onfloor,atwindow,hasnot))
         q = yp.query('canget', [yp.functor('state',
                 [yp.atom('atdoor'), yp.atom('onfloor'),
@@ -228,8 +228,8 @@ class TestYP(unittest.TestCase):
     def test_load_scripts_concurrently(self):
         yp1 = YP()
         yp2 = YP()
-        yp1.load_script(pathlib.Path(_SCRIPT_DIR) / 'script1a.py')
-        yp2.load_script(pathlib.Path(_SCRIPT_DIR) / 'script1b.py')
+        yp1.load_script(_DATA_DIR / 'script1a.py')
+        yp2.load_script(_DATA_DIR / 'script1b.py')
         X1 = yp1.variable()
         q1 = yp1.query('fact', [X1])
         X2 = yp2.variable()
@@ -269,7 +269,7 @@ class TestYP(unittest.TestCase):
 
     def test_run_infinite_script(self):
         yp = YP()
-        yp.load_script(pathlib.Path(_SCRIPT_DIR) / 'monkey.py')
+        yp.load_script(_DATA_DIR / 'monkey.py')
         # canget(state(atdoor,onfloor,atwindow,hasnot))
         q = yp.query('canget', [yp.functor('state', [yp.atom('atdoor'),
             yp.atom('onfloor'), yp.atom('atwindow'), yp.atom('hasnot')])])
@@ -281,7 +281,7 @@ class TestYP(unittest.TestCase):
 
     def test_run_lists_script(self):
         yp = YP()
-        yp.load_script(pathlib.Path(_SCRIPT_DIR) / 'lists.py')
+        yp.load_script(_DATA_DIR / 'lists.py')
         l = yp.makelist([yp.atom(x) for x in ['Johnny', 'Dee Dee', 'Joey',
             'Tommy', 'Marky', 'Richie', 'Elvis', 'C. J.']])
         q = yp.query('member', [yp.atom('Richie'), l])
@@ -296,15 +296,15 @@ class TestYP(unittest.TestCase):
 
     def test_sploit_eval(self):
         yp = YP()
-        yp.load_script(pathlib.Path(_SCRIPT_DIR) / 'eval.py')
+        yp.load_script(_DATA_DIR / 'eval.py')
         q = yp.query('sploit', ['1+1'])
         r = list(q)
         self.assertEqual(r, [])
 
     def test_load_scripts_add_multiple_definitions(self):
         yp = YP()
-        yp.load_script(pathlib.Path(_SCRIPT_DIR) / 'defs1.py', overwrite=False)
-        yp.load_script(pathlib.Path(_SCRIPT_DIR) / 'defs2.py', overwrite=False)
+        yp.load_script(_DATA_DIR / 'defs1.py', overwrite=False)
+        yp.load_script(_DATA_DIR / 'defs2.py', overwrite=False)
         v1 = yp.variable()
         v2 = yp.variable()
         v3 = yp.variable()
@@ -317,8 +317,8 @@ class TestYP(unittest.TestCase):
 
     def test_load_scripts_overwrite_multiple_definitions(self):
         yp = YP()
-        yp.load_script(pathlib.Path(_SCRIPT_DIR) / 'defs1.py', overwrite=True)
-        yp.load_script(pathlib.Path(_SCRIPT_DIR) / 'defs2.py', overwrite=True)
+        yp.load_script(_DATA_DIR / 'defs1.py', overwrite=True)
+        yp.load_script(_DATA_DIR / 'defs2.py', overwrite=True)
         v1 = yp.variable()
         v2 = yp.variable()
         v3 = yp.variable()
@@ -337,8 +337,8 @@ class TestYP(unittest.TestCase):
 
     def test_load_scripts_with_dependencies_in_order(self):
         yp = YP()
-        yp.load_script(pathlib.Path(_SCRIPT_DIR) / 'subscript.py', overwrite=False)
-        yp.load_script(pathlib.Path(_SCRIPT_DIR) / 'mainscript.py', overwrite=False)
+        yp.load_script(_DATA_DIR / 'subscript.py', overwrite=False)
+        yp.load_script(_DATA_DIR / 'mainscript.py', overwrite=False)
         v1 = yp.variable()
         q = yp.query('main', [v1])
         r = [v1.get_value() for x in q]
@@ -346,8 +346,8 @@ class TestYP(unittest.TestCase):
 
     def test_load_scripts_with_dependencies_out_of_order(self):
         yp = YP()
-        yp.load_script(pathlib.Path(_SCRIPT_DIR) / 'mainscript.py', overwrite=False)
-        yp.load_script(pathlib.Path(_SCRIPT_DIR) / 'subscript.py', overwrite=False)
+        yp.load_script(_DATA_DIR / 'mainscript.py', overwrite=False)
+        yp.load_script(_DATA_DIR / 'subscript.py', overwrite=False)
         v1 = yp.variable()
         q = yp.query('main', [v1])
         r = [v1.get_value() for x in q]
@@ -355,7 +355,7 @@ class TestYP(unittest.TestCase):
 
     def test_load_clauses_with_functors(self):
         yp = YP()
-        yp.load_script(pathlib.Path(_SCRIPT_DIR) / 'geometricobjects.py', overwrite=False)
+        yp.load_script(_DATA_DIR / 'geometricobjects.py', overwrite=False)
         Y = yp.variable()
         q = yp.query('horizontal', [
             yp.functor('seg', [
