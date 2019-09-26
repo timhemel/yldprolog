@@ -56,7 +56,7 @@ You can use these modules in your program, for example.
 # 1. construct the yldproglog engine
 yp = YP()
 # 2. load a script from a path or filename
-yp.load_script(pathlib.Path(_SCRIPT_DIR) / 'monkey.py')
+yp.load_script_from_file(pathlib.Path(_SCRIPT_DIR) / 'monkey.py')
 # 3. execute the query:
 #    canget(state(atdoor, onfloor, atwindow, hasnot))
 q = yp.query('canget', [yp.functor('state',

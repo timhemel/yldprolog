@@ -286,29 +286,33 @@ class YP(object):
         r = functools.reduce(lambda x, y: self.listpair(y, x), reversed(l), self.ATOM_NIL)
         return r
 
-    def load_script(self, fn, overwrite=True):
-        """Loads a compiled Prolog program. Any functions defined in this program will be
+    def load_script_from_string(self, s, fn='', overwrite=True):
+        """Loads a compiled (to Python) Prolog program. Any functions defined in this program will be
         available to the engine and can be used in queries.
+        s is a string of Python code.
+        fn is an optional filename.
         If overwrite is True, it will overwrite existing function definitions. Otherwise,
         function definitions will be combined. Functions with the same name but a different
         number of arguments will be overwritten or combined. This could cause runtime errors.
         """
         new_context = self.eval_context.copy()
-        with open(fn, "r") as f:
-            code = compile(f.read(), fn, 'exec')
-            exec(code, new_context)
+        code = compile(s, fn, 'exec')
+        exec(code, new_context)
         for k, v in new_context.items():
             if self.eval_context.get(k) != v: # difference!
                 # combine
                 if overwrite:
                     self.eval_context[k] = v
                 else:
-                    # self.eval_context[k] = itertools.chain(self.eval_context.get(k,[]),v)
                     self.eval_context[k] = chain_functions(self.eval_context.get(k), v)
         # TODO: raise YPEngineException if loading fails
-        # print "Loaded script"
-        #for k,v in self.eval_context.items():
-        #    print "\t%s -> %s" % (k,v)
+
+    def load_script_from_file(self, fn, overwrite=True):
+        """Same as load_script_from_string, but from file fn."""
+
+        with open(fn, "r") as f:
+            self.load_script_from_string(f.read(), fn=fn, overwrite=overwrite)
+    
     def register_function(self, name, func):
         """Makes the function func available to the engine with name name. This can be used
         to call custom functions. These function will have to behave as Prolog functions, i.e.
