@@ -46,7 +46,7 @@ canget(State1) :-
 You can compile this Prolog script with:
 
 ```
-compiler/compile.py monkey.prolog > monkey.py
+yldpc monkey.prolog > monkey.py
 ```
 
 The result is a Python module that defines the predicates as functions.
@@ -100,6 +100,8 @@ You will also need to install the Python runtime, for example (Python3):
 pip3 install antlr4-python3-runtime==4.7.2
 ```
 
-The `build.sh` script will then build the compiler.
+### Generating the compiler
+
+You build the compiler by running `make compiler`.
  
 
