@@ -3,7 +3,7 @@ TEST_PROLOG_TARGETS=$(TEST_PROLOG_SOURCES:.prolog=.py)
 
 PROLOG_COMPILE=python -m yldprolog.compiler
 
-.PHONY: test install
+.PHONY: test install dist
 
 compiler: yldprolog/prologVisitor.py
 
@@ -18,4 +18,7 @@ test: $(TEST_PROLOG_TARGETS)
 
 install: compiler
 	python setup.py clean install
+
+dist: compiler
+	python setup.py sdist bdist_wheel
 
