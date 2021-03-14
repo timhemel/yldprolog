@@ -216,7 +216,7 @@ class YPPrologCompiler:
             elif isinstance(body.lhs,NegationPredicate):
                 # for semidetnoneout => if (!A) { B }
                 # else:
-                self._debug("((\+ A),B) =>  (A -> fail ; true),B")
+                self._debug("((\\+ A),B) =>  (A -> fail ; true),B")
                 return self.compileBody(
                     ConjunctionPredicate(
                         DisjunctionPredicate(
@@ -308,7 +308,7 @@ class YPPrologCompiler:
                 self._debug("[A  =>  A, true]  A => A, true")
                 return self.compileBody(ConjunctionPredicate(body, TruePredicate()))
         elif isinstance(body,NegationPredicate):
-            self._debug("[A  =>  A, true]  (\+ A) => (\+ A), true")
+            self._debug("[A  =>  A, true]  (\\+ A) => (\\+ A), true")
             return self.compileBody(ConjunctionPredicate(body, TruePredicate()))
         # :- fail
         elif isinstance(body,FailPredicate):
