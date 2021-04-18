@@ -27,7 +27,7 @@ setuptools.setup(
     },
     python_requires='>=3.6',
     install_requires=[
-        'antlr4-python3-runtime>=4.7.2'
+        'antlr4-python3-runtime>=4.9.1'
     ]
 )
 
