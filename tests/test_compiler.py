@@ -20,7 +20,7 @@
 # version 3
 # SPDX-License-Identifier: AGPL-3.0-only
 
-import unittest
+import pytest
 import re
 import pathlib
 import sys
@@ -32,24 +32,17 @@ _DATA_DIR = pathlib.Path(os.path.dirname(__file__)) / 'data'
 def strip_comments(s):
     return re.sub(r'^#.*$', '', s, flags=re.MULTILINE).strip()
 
-class TestYldPrologCompiler(unittest.TestCase):
-    def setUp(self):
-        pass
+def test_compile_empty_string():
+    s = yldprolog.compiler.compile_prolog_from_string("")
+    assert strip_comments(s) ==  ''
 
-    def test_compile_empty_string(self):
-        s = yldprolog.compiler.compile_prolog_from_string("")
-        self.assertEqual(strip_comments(s), "")
+def test_compile_simple_string():
+    s = yldprolog.compiler.compile_prolog_from_string(
+            "testlist([cyan,magenta,yellow]).")
+    assert re.search(r'testlist', strip_comments(s))
 
-    def test_compile_simple_string(self):
-        s = yldprolog.compiler.compile_prolog_from_string(
-                "testlist([cyan,magenta,yellow]).")
-        self.assertRegex(strip_comments(s), r'testlist')
+def test_compile_from_file():
+    path = _DATA_DIR / 'script1a.prolog'
+    s = yldprolog.compiler.compile_prolog_from_file(path)
+    assert re.search(r'red', strip_comments(s))
 
-    def test_compile_from_file(self):
-        path = _DATA_DIR / 'script1a.prolog'
-        s = yldprolog.compiler.compile_prolog_from_file(path)
-        self.assertRegex(strip_comments(s), r'red')
-
-
-if __name__ == "__main__":
-    unittest.main()
