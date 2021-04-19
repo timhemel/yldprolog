@@ -297,7 +297,7 @@ class YPPrologVisitor(prologVisitor):
         if ctx.LBRACK() is not None:
             if ctx.VARIABLE() is not None:
                 # listpair
-                term = self.visitTerm(ctx.term())
+                term = self.visitTerm(ctx.term(0))
                 if ctx.termlist() is not None:
                     terms = [term] + self.visitTermlist(ctx.termlist())
                 else:
