@@ -33,16 +33,18 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 grammar prolog;
 
 program 
-    : clauselist // query?
+    : clauseordirective* // query?
     ;
 
-clauselist 
-    :  (clause|directive)*
+clauseordirective 
+    : clause
+    | directive
     ;
 
 clause 
     : (simplepredicate '.')
     | (simplepredicate ':-' predicateterm '.')
+    // | (simplepredicate '-->' predicateterm '.')
     ;
 
 directive
@@ -53,52 +55,56 @@ predicatelist
     // :  predicateterm | predicateterm ',' predicatelist
     ;
 
+// expression about the data
 simplepredicate 
     : TRUE
     | FAIL
     | CUT
-    // | atom
     | functor
+    | term
     ;
 
-// TODO: atoms (functors with arity 0?)
 functor
     : atom
     | atom '(' termlist ')'
     ;
 
+// TODO: strings of special characters
 atom
     : ATOM
+    | NUMERAL
     | STRING
     ;
 
 
+// expressions on the logic level
 predicateterm
     : simplepredicate
     | op='\\+' predicateterm
-    | predicateterm op=',' predicateterm   // TODO make right assoc
-    | predicateterm op='->' predicateterm
-    | predicateterm op=';' predicateterm
+    | <assoc=right> predicateterm op=',' predicateterm   // TODO make right assoc
+    | <assoc=right> predicateterm op='->' predicateterm
+    | <assoc=right> predicateterm op=';' predicateterm
     | '(' predicateterm ')'
     ;
 
 termlist 
-    : term
-    | term ',' termlist
+    :
+    | term ( ',' term )*
     ;
 
 term 
-    : NUMERAL
-    | atom
+    // : NUMERAL
+    : atom
     | functor
     | ATOM '/' NUMERAL
     | VARIABLE
-    // | UNOP term
+    | UNOP term
     | term BINOP term
-    // | '(' term ')'
-    | LBRACK RBRACK
+    | BINOP '(' term ',' term ')'
+    | '(' term ')'
+    // | LBRACK RBRACK
     | LBRACK termlist RBRACK
-    | LBRACK termlist '|' VARIABLE RBRACK
+    | LBRACK term ( ',' termlist )? '|' VARIABLE RBRACK
     ;
 
 /*
@@ -111,31 +117,23 @@ TRUE: 'true' ;
 FAIL: 'fail' ;
 CUT: '!' ;
 
-VARIABLE 
-    : UCLETTER CHARACTER*
-    | '_'
-    ;
+VARIABLE: (UCLETTER|'_') CHARACTER*;
 
-ATOM 
-    : LCLETTER CHARACTER*
-    ;
+ATOM: LCLETTER CHARACTER*;
 
-NUMERAL 
-    : DIGIT+
-    ;
+NUMERAL: DIGIT+ ; // TODO: real numbers
 
 fragment CHARACTER 
-    : LCLETTER | UCLETTER | DIGIT
+    : LCLETTER | UCLETTER | DIGIT | '_'
     ;
 
-/*
 UNOP
     : '-' | '+'
     ;
-*/
 
+// only (predicates), no other expressions
 BINOP
-    : '==' | '!=' | '<' | '>' | '<=' | '>='
+    : '=' | '\\='| '==' | '\\==' | '<' | '>' | '=<' | '>='
     ;
 
 /*

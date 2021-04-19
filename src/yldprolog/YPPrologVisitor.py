@@ -174,25 +174,59 @@ class YPPrologVisitor(prologVisitor):
         prologVisitor.__init__(self)
         self.clauses = {}
         self.anonymousVariableCounter = 0
+        self.debug_indent = 0
+
+    def __getattribute__(self, name):
+        attr = prologVisitor.__getattribute__(self,name)
+        if hasattr(attr, '__call__') and attr.__name__[:5] == 'visit' \
+            and attr.__name__ not in ['visitTerminal', 'visitChildren', 'visit']:
+            def decorated_func(*args, **kwargs):
+                self._debug(f'{" "*2*self.debug_indent}{attr.__name__}, ctx = {args[0]!r} {"{"}')
+                self.debug_indent += 1
+                result = attr(*args, **kwargs)
+                self.debug_indent -= 1
+                self._debug(f'{" "*2*self.debug_indent}{"}"} -> {result} :: {result!r} # {attr.__name__}')
+                return result
+            return decorated_func
+        else:
+            return attr
+
     def _debug(self,*args):
         if self.options.debug:
             self.options.outfile.write('# ' + " ".join([str(a) for a in args]) + '\n')
+
     def visitProgram(self,ctx):
-        self._debug( "visitProgram", repr(ctx) )
-        self.visitChildren(ctx)
+        for i,x in enumerate(ctx.clauseordirective()):
+            r = self.visitClauseordirective(ctx.clauseordirective(i))
+            if isinstance(r, Clause):
+                self.clauses.setdefault((r.head.name(),len(r.head.args())),[]).append(c)
+            else:
+                # directive
+                pass
         return self.clauses
+
+    def visitClauseordirective(self,ctx):
+        if ctx.clause() is not None:
+            return self.visitClause(ctx.clause())
+        else:
+            return self.visitDirective(ctx.directive())
+
+
     def visitClause(self,ctx):
-        self._debug( "visitClause", repr(ctx) )
+        # l =  self.visitChildren(ctx)
+        # print('::: clause children', l)
+        # return l
+        # TODO make a clause for it ?
         lhs = self.visitSimplepredicate(ctx.simplepredicate())
         if ctx.predicateterm():
             rhs = self.visitPredicateterm(ctx.predicateterm())
         else:
             rhs = TruePredicate()
         c = Clause(lhs,rhs)
-        self.clauses.setdefault((lhs.name(),len(lhs.args())),[]).append(c)
+        # self.clauses.setdefault((lhs.name(),len(lhs.args())),[]).append(c)
+        return ((lhs.name(), len(lhs.args())), c)
 
     def visitPredicatelist(self,ctx):
-        self._debug( "visitPredicatelist", repr(ctx) )
         predicateterm = self.visitPredicateterm(ctx.predicateterm())
         if ctx.predicatelist():
             predicatelist = self.visitPredicatelist(ctx.predicatelist())
@@ -201,22 +235,19 @@ class YPPrologVisitor(prologVisitor):
         return PredicateList(predicateterm,predicatelist)
 
     def visitSimplepredicate(self,ctx):
-        self._debug( "visitSimplepredicate", repr(ctx) )
         if ctx.TRUE() != None:
             return TruePredicate()
         if ctx.FAIL() != None:
             return FailPredicate()
         if ctx.CUT() != None:
             return CutPredicate()
-        #if ctx.atom():
-        #    atom = self.visitAtom(ctx.atom())
-        #    return Predicate(atom)
         if ctx.functor():
             functor = self.visitFunctor(ctx.functor())
             return Predicate(functor)
+        if ctx.term() is not None:
+            return self.visitTerm(ctx.term())
 
     def visitPredicateterm(self,ctx):
-        self._debug( "visitPredicateterm", repr(ctx) )
         if ctx.simplepredicate() != None:
             return self.visitSimplepredicate(ctx.simplepredicate())
         if ctx.op:
@@ -240,26 +271,16 @@ class YPPrologVisitor(prologVisitor):
             return self.visitPredicateterm(ctx.predicateterm(0))
 
     def visitFunctor(self,ctx):
-        self._debug( "visitFunctor", repr(ctx) )
         atom = self.visitAtom(ctx.atom())
-        if ctx.termlist() != None:
-            termlist = self.visitTermlist(ctx.termlist())
-        else:
-            termlist = []
+        termlist = self.visitTermlist(ctx.termlist())
         return Functor(atom,termlist)
 
     def visitTermlist(self,ctx):
-        self._debug( "visitTermlist", repr(ctx) )
-        term = self.visitTerm(ctx.term())
-        if ctx.termlist():
-            termlist = self.visitTermlist(ctx.termlist())
-        else:
-            termlist = []
-        return [ term ] + termlist
+        terms = [ self.visitTerm(ctx.term(i)) for i in range(len(ctx.term())) ]
+        return terms
+
     def visitTerm(self,ctx):
-        self._debug( "visitTerm", repr(ctx) )
-        if ctx.NUMERAL() != None:
-            return NumeralTerm(ctx.NUMERAL().getText())
+
         if ctx.atom() != None:
             atom = self.visitAtom(ctx.atom())
             return atom
@@ -269,25 +290,26 @@ class YPPrologVisitor(prologVisitor):
         if ctx.BINOP() != None:
             lterm = self.visitTerm(ctx.term(0))
             rterm = self.visitTerm(ctx.term(1))
-            return "( ( %s ) %s ( %s ))" % (lterm, ctx.BINOP(),rterm)
+            return Functor(ctx.BINOP().getText(), [lterm, rterm])
+            # return "( ( %s ) %s ( %s ))" % (lterm, ctx.BINOP(),rterm)
         #if ctx.predicate() != None:
         #    predicate = self.visitPredicate(ctx.predicate())
         #    return predicate
-        if ctx.LBRACK() != None:
+        if ctx.LBRACK() is not None:
             if ctx.VARIABLE() != None:
                 # listpair
-                termlist = self.visitTermlist(ctx.termlist())
+                term = self.visitTerm(ctx.term())
+                if ctx.termlist() is not None:
+                    terms = [term] + self.visitTermlist(ctx.termlist())
+                else:
+                    terms = [term]
                 var = self.visitVARIABLE(ctx.VARIABLE())
-                p = functools.reduce(lambda x,y: ListPairTerm(y,x), reversed(termlist), var)
+                p = functools.reduce(lambda x,y: ListPairTerm(y,x), reversed(terms), var)
                 return p
-            if ctx.termlist() != None:
-                # list with content
+            else:
+                # list with terms
                 termlist = self.visitTermlist(ctx.termlist())
                 return ListTerm(termlist)
-            else:
-                # empty list
-                l = ListTerm([])
-                return l
         if ctx.VARIABLE() != None:
             return self.visitVARIABLE(ctx.VARIABLE())
         if ctx.term() != []:
@@ -295,12 +317,16 @@ class YPPrologVisitor(prologVisitor):
             return term
         else:
             self._debug( "UNKNOWN TERM",ctx.getText() )
+
     def visitAtom(self,ctx):
+        if ctx.NUMERAL() != None:
+            return NumeralTerm(ctx.NUMERAL().getText())
         if ctx.STRING() != None:
             us = self.unquoteString(ctx.STRING().getText())
             return Atom(us)
         if ctx.ATOM() != None:
             return Atom(ctx.ATOM().getText())
+
     def visitVARIABLE(self,var):
         varname = var.getText()
         if varname == '_':
@@ -309,6 +335,7 @@ class YPPrologVisitor(prologVisitor):
         else:
             variable = VariableTerm(varname)
         return variable
+
     def unquoteString(self,s):
         i = 1 # skip first quote
         r = ""
