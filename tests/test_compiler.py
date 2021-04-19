@@ -46,3 +46,19 @@ def test_compile_from_file():
     s = yldprolog.compiler.compile_prolog_from_file(path)
     assert re.search(r'red', strip_comments(s))
 
+def test_compile_clause():
+    s = yldprolog.compiler.compile_prolog_from_string(
+            "member(X,[Y|L]) :- member(X,L).")
+    assert re.search(r'member',s)
+
+def test_compile_syntax_error():
+    with pytest.raises(Exception):
+        s = yldprolog.compiler.compile_prolog_from_string(
+            "member(X,[Y|L] :- member(X,L).")
+
+def test_compile_binary_operator():
+    s = yldprolog.compiler.compile_prolog_from_string(
+            "gt(X,Y) :- X > Y.")
+    assert re.search(r'gt',s)
+
+

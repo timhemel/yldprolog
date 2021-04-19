@@ -360,6 +360,14 @@ def test_query_without_predicates():
     r = list(q)
     assert r == []
 
+def test_query_operator_equals():
+    yp = YP()
+    v1 = yp.variable()
+    q = yp.query('=', [v1, v1])
+    r = list(q)
+    assert len(r) == 1
+
+
 def test_load_scripts_with_dependencies_in_order(get_compiled_file):
     yp = YP()
     yp.load_script_from_file(get_compiled_file('subscript.prolog'), overwrite=False)
