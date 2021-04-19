@@ -152,10 +152,12 @@ class YPPrologCompiler:
     def compileProgram(self,program):
         funcs = []
         for func,clauses in program.items():
+            self._debug(f'Compiling clauses for {func}')
             body = functools.reduce(lambda x,y: x+y, [ self.compileFunctionBody(c) for c in clauses ], [] )
             funcs.append(self.compileFunction(func,body))
         return YPCodeProgram(funcs)
     def compileFunctionBody(self,clause):
+        self._debug(f'-- Clause: {clause.head} :- {clause.body}')
         self.findClauseHeadVariableArguments(clause.head.functor.args)
         headVarArguments = self.compileClauseHeadVariableArguments(clause.head.functor.args)
         self.pushBoundVars( [ v for v in self.headArgsByPos if v != None ] )
@@ -177,16 +179,20 @@ class YPPrologCompiler:
         self.popBoundVars()
 
         return headVarArguments + freeVarDeclarationCodeHead + freeVarDeclarationCodeBody + argListUnificationCode
+
     def compileFunction(self,func,body):
         funcargs = [ self.getArgumentVariable(i) for i in range(func[1]) ]
         return YPCodeFunction(func[0],funcargs,body)
+
     def compileVariableAssignments(self,variablesWithValues):
         code = []
         for var,val in variablesWithValues:
             code.append(self.compileVariableAssignment(var,val))
         return code
+
     def compileVariableAssignment(self,var,val):
         return YPCodeAssign(var,val)
+
     def compileVariableDeclarations(self,variables):
         code = []
         for v in variables:
@@ -195,28 +201,28 @@ class YPPrologCompiler:
 
     def compileBody(self,body):
         # :- A,B
-        self._debug("DEBUG", body)
+        self._debug(f'---- Body: {body} :: {body!r}')
         if isinstance(body,ConjunctionPredicate):
             # if A is simple
             if isinstance(body.lhs,Predicate):
                 if body.lhs.functor.name.value == '$CUTIF':
-                    self._debug("$CUTIF, A")
+                    self._debug("------ case: $CUTIF, A")
                     label = body.lhs.functor.args[0].value
                     codeA = self.compileBody(body.rhs)
                     codeB = [ YPCodeBreakBlock(label) ]
                     return codeA + codeB
                 else:
-                    self._debug("A,B")
+                    self._debug("------ case: A,B")
                     coderhs = self.compileBody(body.rhs)
                     return self.compilePredicate(body.lhs, coderhs)
             elif isinstance(body.lhs,CutPredicate):
-                self._debug("(!,A) => A [yieldBreak]")
+                self._debug("------ case: (!,A) => A [yieldBreak]")
                 codeA = self.compileBody(body.rhs)
                 return codeA + [ YPCodeYieldBreak() ]
             elif isinstance(body.lhs,NegationPredicate):
                 # for semidetnoneout => if (!A) { B }
                 # else:
-                self._debug("((\\+ A),B) =>  (A -> fail ; true),B")
+                self._debug("------ case: ((\\+ A),B) =>  (A -> fail ; true),B")
                 return self.compileBody(
                     ConjunctionPredicate(
                         DisjunctionPredicate(
@@ -227,14 +233,14 @@ class YPPrologCompiler:
                     )
                 )
             elif isinstance(body.lhs,ConjunctionPredicate): # A is complex
-                self._debug("(A,B),C => A,(B,C)")
+                self._debug("------ case: (A,B),C => A,(B,C)")
                 return self.compileBody(
                         ConjunctionPredicate(body.lhs.lhs, ConjunctionPredicate(body.lhs.rhs,body.rhs))
                 )
             elif isinstance(body.lhs,DisjunctionPredicate):
                 # (A -> T ; B ), C  =>  A -> (T,C) ; B, C
                 if isinstance(body.lhs.lhs,IfThenPredicate):
-                    self._debug("(A -> T ; B ), C  =>  A -> (T,C) ; B, C")
+                    self._debug("------ case: (A -> T ; B ), C  =>  A -> (T,C) ; B, C")
                     return self.compileBody(
                         DisjunctionPredicate(
                             IfThenPredicate(
@@ -246,7 +252,7 @@ class YPPrologCompiler:
                     )
                 # ( A ; B ) , C   =>  A,C ; B,C
                 else:
-                    self._debug("( A ; B ) , C   =>  A,C ; B,C")
+                    self._debug("------ case: ( A ; B ) , C   =>  A,C ; B,C")
                     return self.compileBody(
                         DisjunctionPredicate(
                             ConjunctionPredicate(body.lhs.lhs,body.rhs),
@@ -254,7 +260,7 @@ class YPPrologCompiler:
                         )
                     )
             elif isinstance(body.lhs,IfThenPredicate):
-                self._debug("(A -> T), B  =>  (A -> T ; fail), B")
+                self._debug("------ case: (A -> T), B  =>  (A -> T ; fail), B")
                 self._debug(body.lhs, body.rhs)
                 # (A -> T), B  =>  (A -> T ; fail), B
                 return self.compileBody(
@@ -267,15 +273,15 @@ class YPPrologCompiler:
                         ))
             # true , A  =>  A
             elif isinstance(body.lhs,TruePredicate):
-                self._debug("true , A => A")
+                self._debug("------ case: true , A => A")
                 return self.compileBody(body.rhs)
             elif isinstance(body.lhs,FailPredicate):
-                self._debug("fail , _ ")
+                self._debug("------ case: fail , _ ")
                 return []
         elif isinstance(body,DisjunctionPredicate):
             # A -> T ; B     =>   breakableblock (  A , $CUTIF(CutIfLabel) , T ; B )
             if isinstance(body.lhs,IfThenPredicate):
-                self._debug("A -> T ; B  => breakableBlock( ... )")
+                self._debug("------ case: A -> T ; B  => breakableBlock( ... )")
                 cutIfLabel = self.getCutIfLabel()
                 code = self.compileBody(
                     DisjunctionPredicate(
@@ -292,40 +298,41 @@ class YPPrologCompiler:
                 return [ YPCodeBreakableBlock(cutIfLabel,code) ]
             else:
                 # else:  A ; B
-                self._debug("A ; B")
+                self._debug("------ case: A ; B")
                 codelhs = self.compileBody(body.lhs)
                 coderhs = self.compileBody(body.rhs)
                 return codelhs + coderhs
         elif isinstance(body,IfThenPredicate):
-            self._debug("[A  =>  A, true]  A -> T => (A -> T), true")
+            self._debug("------ case: [A  =>  A, true]  A -> T => (A -> T), true")
             return self.compileBody(ConjunctionPredicate(body, TruePredicate()))
         # :- functor(...)   A => A, true
         elif isinstance(body,Predicate):
             if body.functor.name.value == '$CUTIF':
-                self._debug("$CUTIF", body.functor.args)
+                self._debug("------ case: $CUTIF", body.functor.args)
                 return [ self.YPCodeBreakBlock(body.functor.args[0].value) ]
             else:
-                self._debug("[A  =>  A, true]  A => A, true")
+                self._debug("------ case: [A  =>  A, true]  A => A, true")
                 return self.compileBody(ConjunctionPredicate(body, TruePredicate()))
         elif isinstance(body,NegationPredicate):
-            self._debug("[A  =>  A, true]  (\\+ A) => (\\+ A), true")
+            self._debug("------ case: [A  =>  A, true]  (\\+ A) => (\\+ A), true")
             return self.compileBody(ConjunctionPredicate(body, TruePredicate()))
         # :- fail
         elif isinstance(body,FailPredicate):
-            self._debug("[A  =>  A, true]  fail => fail, true")
+            self._debug("------ case: [A  =>  A, true]  fail => fail, true")
             return self.compileBody(ConjunctionPredicate(body, TruePredicate()))
         # :- true
         elif isinstance(body,TruePredicate):
             # TODO: ? return, return True, yield False (depending on state)
-            self._debug("true")
+            self._debug("------ case: true")
             return [ YPCodeYieldFalse() ]
         elif isinstance(body,CutPredicate):
-            self._debug("!")
+            self._debug("------ case: !")
             # for det predicates => [return]
             # for semidet predicates => [ returntrue ]
             # else => [ yieldtrue, yieldbreak ]
             return [ YPCodeYieldTrue(), YPCodeYieldBreak() ]
-        self._debug("UNK", body)
+        self._debug("------ case: unknown!!", body)
+
     def compilePredicate(self,pred,code):
         args = [ self.compileExpression(a) for a in pred.functor.args ]
         return [ YPCodeForeach(YPCodeCall('query',[YPCodeExpr(pred.functor.name.value),YPCodeList(args)]),code) ]
