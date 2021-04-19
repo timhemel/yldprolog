@@ -93,7 +93,6 @@ termlist
     ;
 
 term 
-    // : NUMERAL
     : atom
     | functor
     | ATOM '/' NUMERAL
@@ -102,7 +101,6 @@ term
     | term BINOP term
     | BINOP '(' term ',' term ')'
     | '(' term ')'
-    // | LBRACK RBRACK
     | LBRACK termlist RBRACK
     | LBRACK term ( ',' termlist )? '|' VARIABLE RBRACK
     ;
