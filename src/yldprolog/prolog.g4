@@ -43,48 +43,40 @@ clauseordirective
 
 clause 
     : (simplepredicate '.')
-    | (simplepredicate ':-' predicateterm '.')
-    // | (simplepredicate '-->' predicateterm '.')
+    | (simplepredicate ':-' predicateexpression '.')
+    // | (simplepredicate '-->' predicateexpression '.')
     ;
 
 directive
     : ':-' simplepredicate '.' ;
 
 predicatelist 
-    :  predicateterm
-    // :  predicateterm | predicateterm ',' predicatelist
+    :  predicateexpression
+    // :  predicateexpression | predicateexpression ',' predicatelist
     ;
 
-// expression about the data
+
+// expressions on the predicate level
+predicateexpression
+    : simplepredicate
+    | op='\\+' predicateexpression
+    | <assoc=right> predicateexpression op=',' predicateexpression   // TODO make right assoc
+    | <assoc=right> predicateexpression op='->' predicateexpression
+    | <assoc=right> predicateexpression op=';' predicateexpression
+    | '(' predicateexpression ')'
+    ;
+
+// expression on the predicate level
 simplepredicate 
     : TRUE
     | FAIL
     | CUT
-    | functor
-    | term
+    | termpredicate
     ;
 
-functor
-    : atom
-    | atom '(' termlist ')'
-    ;
-
-// TODO: strings of special characters
-atom
-    : ATOM
-    | NUMERAL
-    | STRING
-    ;
-
-
-// expressions on the logic level
-predicateterm
-    : simplepredicate
-    | op='\\+' predicateterm
-    | <assoc=right> predicateterm op=',' predicateterm   // TODO make right assoc
-    | <assoc=right> predicateterm op='->' predicateterm
-    | <assoc=right> predicateterm op=';' predicateterm
-    | '(' predicateterm ')'
+// predicate that incorporates a logic term
+termpredicate
+    : term
     ;
 
 termlist 
@@ -103,6 +95,19 @@ term
     | '(' term ')'
     | LBRACK termlist RBRACK
     | LBRACK term ( ',' termlist )? '|' VARIABLE RBRACK
+    ;
+
+
+// TODO: strings of special characters
+atom
+    : ATOM
+    | NUMERAL
+    | STRING
+    ;
+
+functor
+    : atom
+    | atom '(' termlist ')'
     ;
 
 /*

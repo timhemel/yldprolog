@@ -214,20 +214,20 @@ class YPPrologVisitor(prologVisitor):
 
     def visitClause(self,ctx):
         lhs = self.visitSimplepredicate(ctx.simplepredicate())
-        if ctx.predicateterm():
-            rhs = self.visitPredicateterm(ctx.predicateterm())
+        if ctx.predicateexpression():
+            rhs = self.visitPredicateexpression(ctx.predicateexpression())
         else:
             rhs = TruePredicate()
         c = Clause(lhs,rhs)
         return c
 
     def visitPredicatelist(self,ctx):
-        predicateterm = self.visitPredicateterm(ctx.predicateterm())
+        predicateexpression = self.visitPredicateexpression(ctx.predicateexpression())
         if ctx.predicatelist():
             predicatelist = self.visitPredicatelist(ctx.predicatelist())
         else:
             predicatelist = None
-        return PredicateList(predicateterm,predicatelist)
+        return PredicateList(predicateexpression,predicatelist)
 
     def visitSimplepredicate(self,ctx):
         if ctx.TRUE() is not None:
@@ -236,34 +236,36 @@ class YPPrologVisitor(prologVisitor):
             return FailPredicate()
         if ctx.CUT() is not None:
             return CutPredicate()
-        if ctx.functor():
-            functor = self.visitFunctor(ctx.functor())
-            return Predicate(functor)
-        if ctx.term() is not None:
-            return self.visitTerm(ctx.term())
+        if ctx.termpredicate() is not None:
+            return self.visitTermpredicate(ctx.termpredicate())
 
-    def visitPredicateterm(self,ctx):
+    def visitTermpredicate(self, ctx):
+        return Predicate(self.visitTerm(ctx.term()))
+
+    def visitPredicateexpression(self,ctx):
         if ctx.simplepredicate() is not None:
-            return self.visitSimplepredicate(ctx.simplepredicate())
+            p = self.visitSimplepredicate(ctx.simplepredicate())
+            # TODO p should be a functor, check
+            return p
         if ctx.op:
             if ctx.op.text == '\\+':
-                predicateterm = self.visitPredicateterm(ctx.predicateterm(0))
-                return NegationPredicate(predicateterm)
+                predicateexpression = self.visitPredicateexpression(ctx.predicateexpression(0))
+                return NegationPredicate(predicateexpression)
             if ctx.op.text == ',':
-                lhs = self.visitPredicateterm(ctx.predicateterm(0))
-                rhs = self.visitPredicateterm(ctx.predicateterm(1))
+                lhs = self.visitPredicateexpression(ctx.predicateexpression(0))
+                rhs = self.visitPredicateexpression(ctx.predicateexpression(1))
                 return ConjunctionPredicate(lhs,rhs)
             if ctx.op.text == '->':
-                lhs = self.visitPredicateterm(ctx.predicateterm(0))
-                rhs = self.visitPredicateterm(ctx.predicateterm(1))
+                lhs = self.visitPredicateexpression(ctx.predicateexpression(0))
+                rhs = self.visitPredicateexpression(ctx.predicateexpression(1))
                 return IfThenPredicate(lhs,rhs)
             if ctx.op.text == ';':
-                lhs = self.visitPredicateterm(ctx.predicateterm(0))
-                rhs = self.visitPredicateterm(ctx.predicateterm(1))
+                lhs = self.visitPredicateexpression(ctx.predicateexpression(0))
+                rhs = self.visitPredicateexpression(ctx.predicateexpression(1))
                 return DisjunctionPredicate(lhs,rhs)
-        # else: ( predicateterm )
-        if ctx.predicateterm() != []:
-            return self.visitPredicateterm(ctx.predicateterm(0))
+        # else: ( predicateexpression )
+        if ctx.predicateexpression() != []:
+            return self.visitPredicateexpression(ctx.predicateexpression(0))
 
     def visitFunctor(self,ctx):
         atom = self.visitAtom(ctx.atom())
