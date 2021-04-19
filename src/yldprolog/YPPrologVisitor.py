@@ -289,11 +289,11 @@ class YPPrologVisitor(prologVisitor):
         if ctx.UNOP() is not None:
             # TODO: check if we need unary operators
             term = self.visitTerm(ctx.term(0))
-            return Functor(ctx.UNOP().getText(), [term])
+            return Functor(Atom(ctx.UNOP().getText()), [term])
         if ctx.BINOP() is not None:
             lterm = self.visitTerm(ctx.term(0))
             rterm = self.visitTerm(ctx.term(1))
-            return Functor(ctx.BINOP().getText(), [lterm, rterm])
+            return Functor(Atom(ctx.BINOP().getText()), [lterm, rterm])
         if ctx.LBRACK() is not None:
             if ctx.VARIABLE() is not None:
                 # listpair
