@@ -75,6 +75,7 @@ simplepredicate
     ;
 
 // predicate that incorporates a logic term
+// 
 termpredicate
     : term
     ;
@@ -106,8 +107,7 @@ atom
     ;
 
 functor
-    : atom
-    | atom '(' termlist ')'
+    : atom '(' termlist ')'
     ;
 
 /*

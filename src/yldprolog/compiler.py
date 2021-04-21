@@ -30,9 +30,9 @@ from .prologLexer import *
 from .prologParser import *
 from .YPPrologVisitor import *
 from .YPGenerator import *
-import argparse
 import contextlib
 import click
+from .errors import ParseError
 
 def compile_prolog_from_stream(inp, ctx):
     lexer = prologLexer(inp)
@@ -99,8 +99,11 @@ def main(ctx, source, outfile, debug, debug_parser, debug_generator, debug_filen
         for s in source:
             ctx.current_source_file = s
             with open_input_file(s) as inf:
-                pythoncode = compile_prolog_from_stream(inf, ctx)
-                outf.write(pythoncode)
+                try:
+                    pythoncode = compile_prolog_from_stream(inf, ctx)
+                    outf.write(pythoncode)
+                except ParseError as e:
+                    raise click.ClickException(str(e)) from e
 
 if __name__=="__main__":
     main()

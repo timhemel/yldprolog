@@ -25,6 +25,7 @@
 
 from .prologVisitor import prologVisitor
 import functools
+from .errors import ParseError
 
 class PredicateList:
     def __init__(self,head,tail):
@@ -242,12 +243,16 @@ class YPPrologVisitor(prologVisitor):
             return self.visitTermpredicate(ctx.termpredicate())
 
     def visitTermpredicate(self, ctx):
-        return Predicate(self.visitTerm(ctx.term()))
+        t = self.visitTerm(ctx.term())
+        if isinstance(t, Atom):
+            t = Functor(t,[])
+        if not isinstance(t, Functor):
+            raise ParseError(self.context.current_source_file, ctx.term(), f"'{ctx.term().getText()}' is not a functor")
+        return Predicate(t)
 
     def visitPredicateexpression(self,ctx):
         if ctx.simplepredicate() is not None:
             p = self.visitSimplepredicate(ctx.simplepredicate())
-            # TODO p should be a functor, check
             return p
         if ctx.op:
             if ctx.op.text == '\\+':
