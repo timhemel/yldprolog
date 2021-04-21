@@ -33,12 +33,17 @@ from yldprolog.compiler import compile_prolog_from_file
 
 _DATA_DIR = pathlib.Path(os.path.dirname(__file__)) / 'data'
 
+class TestContext:
+    debug_filename = ''
+    debug_parser = False
+    debug_generator = False
+
 @pytest.fixture
 def get_compiled_file(tmp_path):
     # compile all prolog files
     def compile_file(fn):
         path = pathlib.Path(fn)
-        s = compile_prolog_from_file(_DATA_DIR / path)
+        s = compile_prolog_from_file(_DATA_DIR / path, TestContext)
         outfn = tmp_path / path.parent / (path.stem + '.py')
         with open(outfn,'w') as f:
             f.write(s)

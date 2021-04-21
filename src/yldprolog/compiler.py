@@ -47,6 +47,15 @@ def compile_prolog_from_stream(inp, ctx):
     pythoncode = generator.generate(code)
     return pythoncode
 
+
+def compile_prolog_from_string(source, options=None):
+    inp = antlr4.InputStream(source)
+    return compile_prolog_from_stream(inp, options)
+
+def compile_prolog_from_file(path, options=None):
+    inp = FileStream(path, encoding='utf8')
+    return compile_prolog_from_stream(inp, options)
+
 @contextlib.contextmanager
 def open_input_file(fn):
     if fn == '-':
