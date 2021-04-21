@@ -169,11 +169,13 @@ class Clause:
 
 
 class YPPrologVisitor(prologVisitor):
-    def __init__(self,options):
-        self.options = options
+    def __init__(self,context):
+        self.context = context
         prologVisitor.__init__(self)
         self.anonymousVariableCounter = 0
         self.debug_indent = 0
+        if self.context.debug_filename:
+            self._debug(f'Parsing {self.context.current_source_file}')
 
     def __getattribute__(self, name):
         attr = prologVisitor.__getattribute__(self,name)
@@ -191,8 +193,8 @@ class YPPrologVisitor(prologVisitor):
             return attr
 
     def _debug(self,*args):
-        if self.options.debug:
-            self.options.outfile.write('# ' + " ".join([str(a) for a in args]) + '\n')
+        if self.context.debug_parser:
+            self.context.outf.write('# ' + " ".join([str(a) for a in args]) + '\n')
 
     def visitProgram(self,ctx):
         clauses = {}

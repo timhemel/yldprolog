@@ -31,59 +31,76 @@ from .prologParser import *
 from .YPPrologVisitor import *
 from .YPGenerator import *
 import argparse
+import contextlib
+import click
 
-class DefaultCompilerOptions:
-    debug = False
-
-def compile_prolog_from_stream(inp, options):
+def compile_prolog_from_stream(inp, ctx):
     lexer = prologLexer(inp)
     stream = CommonTokenStream(lexer)
     parser = prologParser(stream)
     tree = parser.program()
-    visitor = YPPrologVisitor(options)
+    visitor = YPPrologVisitor(ctx)
     program = visitor.visit(tree)
-    compiler = YPPrologCompiler(options)
+    compiler = YPPrologCompiler(ctx)
     code = compiler.compileProgram(program)
-    generator = YPPythonCodeGenerator()
+    generator = YPPythonCodeGenerator(ctx)
     pythoncode = generator.generate(code)
     return pythoncode
 
+@contextlib.contextmanager
+def open_input_file(fn):
+    if fn == '-':
+        inf = StdinStream()
+    else:
+        inf = FileStream(fn, encoding='utf8')
+    try:
+        yield inf
+    finally:
+        del inf
 
-def compile_prolog_from_string(source, options=DefaultCompilerOptions):
-    inp = antlr4.InputStream(source)
-    return compile_prolog_from_stream(inp, options)
+@contextlib.contextmanager
+def open_output_file(fn):
+    if fn == '-':
+        outf = sys.stdout
+    else:
+        outf = open(fn,'w')
+    try:
+        yield outf
+    finally:
+        outf.close()
 
-def compile_prolog_from_file(path, options=DefaultCompilerOptions):
-    inp = FileStream(path, encoding='utf8')
-    return compile_prolog_from_stream(inp, options)
+def set_debug_options(ctx):
+    ctx.debug_parser = ctx.params['debug_parser']
+    ctx.debug_generator = ctx.params['debug_generator']
+    ctx.debug_filename = ctx.params['debug_filename']
+    if ctx.params['debug']:
+        ctx.debug_parser = True
+        ctx.debug_generator = True
+        ctx.debug_filename = True
 
-class CompilerApp:
-    def __init__(self):
-        parser = argparse.ArgumentParser(description="YP Prolog compiler")
-        parser.add_argument('sourcefile',metavar='SOURCE',type=str, nargs='?',help='Prolog source file')
-        parser.add_argument('-d','--debug',action='store_true',help='generate debug output')
-        self.args = parser.parse_args()
-    def _error(self,msg):
-        sys.stderr.write('Error: '+msg+"\n")
-    def _debug(self,*args):
-        if self.args.debug:
-            self.args.outfile.write('# ' + " ".join([str(a) for a in args]) + '\n')
-    def run(self):
-        self.args.outfile = sys.stdout
-        if self.args.sourcefile == None or self.args.sourcefile == '-':
-            inp = StdinStream()
-        else:
-            try:
-                inp = FileStream(self.args.sourcefile,encoding='utf8')
-            except IOError:
-                self._error("Could not open input file '%s.'" % self.args.sourcefile)
-                sys.exit(1)
-        self._debug(self.args)
-        pythoncode = compile_prolog_from_stream(inp, self.args)
-        self.args.outfile.write(pythoncode)
 
-def main():
-    CompilerApp().run()
+CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
+
+@click.command(context_settings=CONTEXT_SETTINGS)
+@click.option('-d','--debug',is_flag=True)
+@click.option('-o','--outfile',type=click.Path(allow_dash=True), default='-')
+@click.option('--debug-parser', is_flag=True, default=False)
+@click.option('--debug-generator', is_flag=True, default=False)
+@click.option('--debug-filename', is_flag=True, default=False)
+@click.argument('source', nargs=-1, type=click.Path(exists=True,file_okay=True,dir_okay=False,readable=True,allow_dash=True))
+@click.pass_context
+def main(ctx, source, outfile, debug, debug_parser, debug_generator, debug_filename):
+
+    set_debug_options(ctx)
+
+    with open_output_file(outfile) as outf:
+        ctx.outf = outf
+        # TODO: multiple source files
+        for s in source:
+            ctx.current_source_file = s
+            with open_input_file(s) as inf:
+                pythoncode = compile_prolog_from_stream(inf, ctx)
+                outf.write(pythoncode)
 
 if __name__=="__main__":
     main()
