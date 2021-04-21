@@ -29,6 +29,7 @@ from yldprolog.engine import YP
 from yldprolog.engine import Atom
 from yldprolog.engine import Answer
 from yldprolog.engine import unify
+from yldprolog.engine import to_python
 from yldprolog.compiler import compile_prolog_from_file, compile_prolog_from_string
 
 _DATA_DIR = pathlib.Path(os.path.dirname(__file__)) / 'data'
@@ -372,6 +373,29 @@ def test_query_operator_equals():
     r = list(q)
     assert len(r) == 1
 
+def test_query_operator_neq():
+    yp = YP()
+    v1 = yp.variable()
+    q = yp.query('/=', [v1, v1])
+    r = list(q)
+    assert len(r) == 0
+
+def test_query_operator_neq_atom_var():
+    yp = YP()
+    v1 = yp.variable()
+    a1 = yp.atom(1)
+    q = yp.query('/=', [a1, v1])
+    r = list(q)
+    assert len(r) == 0
+
+def test_query_operator_neq_atom_atom():
+    yp = YP()
+    # v1 = yp.variable()
+    a1 = yp.atom(1)
+    a2 = yp.atom(2)
+    q = yp.query('/=', [a1, a2])
+    r = list(q)
+    assert len(r) == 1
 
 def test_load_scripts_with_dependencies_in_order(get_compiled_file):
     yp = YP()
@@ -438,11 +462,14 @@ def test_functor_arities():
     X = yp.variable()
     Y = yp.variable()
     q = yp.query('likes', [ X, Y ])
-    r = [(X.get_value, Y.get_value()) for x in q]
+    r = [(to_python(X.get_value()), to_python(Y.get_value())) for x in q]
     assert set(r) == set(
         [ ('mike','pete'),
             ('mike','joe'),
-            ('joe','pete')
+            ('joe','pete'),
+            ('joe','joe'),
+            ('pete','pete'),
+            ('pete','joe'),
         ])
 
 

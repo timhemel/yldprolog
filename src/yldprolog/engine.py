@@ -23,6 +23,7 @@
 import sys
 import itertools
 import functools
+import inspect
 
 class YPException(Exception):
     pass
@@ -215,6 +216,11 @@ def unify_arrays(array1, array2):
         for i in range(num_iterators):
             iterators[i].close()
 
+def builtin_eq(arg1, arg2):
+    for l in unify(arg1,arg2):
+        yield False
+
+
 
 class YP(object):
     """The YieldProlog engine."""
@@ -224,6 +230,7 @@ class YP(object):
         self.ATOM_NIL = self.atom("[]")
         self.ATOM_DOT = "."
         self._set_default_eval_context()
+        self._set_builtin_predicates()
         self.eval_blacklist = list(self.eval_context.keys())
 
     def _set_default_eval_context(self):
@@ -245,11 +252,37 @@ class YP(object):
             'False': False,
         }
 
+    def builtin_neq(self,arg1, arg2):
+        doBreak = False
+        for _ in [1]:
+            X = arg1
+            Y = arg2
+            cutIf1 = False
+            for _ in [1]:
+                for l1 in self.query('=',[X,Y]):
+                    cutIf1 = True
+                    doBreak = True
+                    break
+                if doBreak:
+                    break
+                yield False
+            if cutIf1:
+                doBreak = False
+            if doBreak:
+                break
+        if False:
+                yield False
+
+    def _set_builtin_predicates(self):
+        self.register_function('=', builtin_eq)
+        self.register_function('/=', self.builtin_neq)
+
     def clear(self):
         """clears all defined atoms, variables, facts and rules."""
         self._atom_store = {}
         self._predicates_store = {}
         self._set_default_eval_context()
+        self._set_builtin_predicates()
 
     def atom(self, name, module=None):
         """Create an atom with name name in this engine. The parameter module is ignored and
@@ -318,7 +351,8 @@ class YP(object):
         to call custom functions. These function will have to behave as Prolog functions, i.e.
         they will need to yield boolean values.
         """
-        self.eval_context[name] = func
+        arity = len(inspect.signature(func).parameters)
+        self.eval_context[f'{name}_{arity}'] = func
 
     def _find_predicates(self, name, arity):
         try:
@@ -360,7 +394,7 @@ class YP(object):
         """
         try:
             if name not in self.eval_blacklist:
-                function = self.eval_context[name]
+                function = self.eval_context[f'{name}_{len(args)}']
                 return function(*args)
         except KeyError as e:
             pass

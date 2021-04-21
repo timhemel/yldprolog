@@ -436,7 +436,7 @@ class YPPythonCodeGenerator:
     def generateFunction(self,func):
         # TODO: check if functionname is a reserved word
         funcargs = ",".join(func.args)
-        s = self.l("def %s(%s):" % (func.name, funcargs))
+        s = self.l(f'def {func.name}_{len(func.args)}({",".join(func.args)}):')
         self.indent()
         # the "ugly code" for breakable blocks doesn't hurt, generate it anyway
         unsetBreakCode = self.l("doBreak = False")
