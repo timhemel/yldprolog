@@ -29,7 +29,7 @@ from yldprolog.engine import YP
 from yldprolog.engine import Atom
 from yldprolog.engine import Answer
 from yldprolog.engine import unify
-from yldprolog.compiler import compile_prolog_from_file
+from yldprolog.compiler import compile_prolog_from_file, compile_prolog_from_string
 
 _DATA_DIR = pathlib.Path(os.path.dirname(__file__)) / 'data'
 
@@ -417,5 +417,32 @@ def test_load_script_from_string(get_compiled_file):
     ])
     r = [Y.get_value() for x in q]
     assert r == [1]
+
+def test_functor_arities():
+    s = compile_prolog_from_string('''
+    likes(A,B) :- person(A), person(B), friend(A,B).
+    likes(A,B,C) :- person(A),person(B), person(C), friend(A,B), friend(A,C).
+    likes(A,B) :- person(A), person(B), person(C), foe(A,C), foe(B,C).
+    person(mike).
+    person(joe).
+    person(pete).
+    person(zack).
+    friend(mike,pete).
+    friend(mike,joe).
+    foe(joe,zack).
+    foe(pete,zack).
+    ''', TestContext)
+
+    yp = YP()
+    yp.load_script_from_string(s, overwrite=False)
+    X = yp.variable()
+    Y = yp.variable()
+    q = yp.query('likes', [ X, Y ])
+    r = [(X.get_value, Y.get_value()) for x in q]
+    assert set(r) == set(
+        [ ('mike','pete'),
+            ('mike','joe'),
+            ('joe','pete')
+        ])
 
 
