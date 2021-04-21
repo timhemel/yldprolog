@@ -47,12 +47,16 @@ def compile_prolog_from_stream(inp, ctx):
     pythoncode = generator.generate(code)
     return pythoncode
 
+class DummyContext:
+    debug_filename = ''
+    debug_parser = False
+    debug_generator = False
 
-def compile_prolog_from_string(source, options=None):
+def compile_prolog_from_string(source, options=DummyContext):
     inp = antlr4.InputStream(source)
     return compile_prolog_from_stream(inp, options)
 
-def compile_prolog_from_file(path, options=None):
+def compile_prolog_from_file(path, options=DummyContext):
     inp = FileStream(path, encoding='utf8')
     return compile_prolog_from_stream(inp, options)
 
