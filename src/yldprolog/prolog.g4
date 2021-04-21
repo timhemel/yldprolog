@@ -60,7 +60,7 @@ predicatelist
 predicateexpression
     : simplepredicate
     | op='\\+' predicateexpression
-    | <assoc=right> predicateexpression op=',' predicateexpression   // TODO make right assoc
+    | <assoc=right> predicateexpression op=',' predicateexpression
     | <assoc=right> predicateexpression op='->' predicateexpression
     | <assoc=right> predicateexpression op=';' predicateexpression
     | '(' predicateexpression ')'
