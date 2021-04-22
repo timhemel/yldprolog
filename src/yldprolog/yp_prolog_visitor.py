@@ -23,8 +23,9 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 
-from .prologVisitor import prologVisitor
 import functools
+import re
+from .prologVisitor import prologVisitor
 from .errors import ParseError
 
 class PredicateList:
@@ -89,7 +90,7 @@ class DisjunctionPredicate:
     def variables(self):
         return self.lhs.variables + self.rhs.variables
     def __str__(self):
-        return "( %s ; %s )" % (str(self.lhs),str(self.rhs))
+        return f'( {self.lhs} ; {self.rhs} )'
 
 class IfThenPredicate:
     def __init__(self,condition,action):
@@ -99,13 +100,13 @@ class IfThenPredicate:
     def variables(self):
         return self.condition.variables + self.action.variables
     def __str__(self):
-        return "( %s -> %s )" % (str(self.condition),str(self.action))
+        return f'( {self.condition} -> {self.action} )'
 
 class NegationPredicate:
     def __init__(self,pred):
         self.pred = pred
     def __str__(self):
-        return "( \\+ %s )" % str(self.pred)
+        return f'( \\+ {self.pred} )'
     @property
     def variables(self):
         return self.pred.variables
@@ -134,13 +135,13 @@ class VariableTerm(Term):
 class AnonymousVariableTerm(VariableTerm):
     def __init__(self,num):
         self.num = num
-        self.varname = 'x'+str(self.num+1)
+        self.varname = f'x{self.num+1}'
 
 class ListTerm(Term):
     def __init__(self,l):
         self.items = l
     def __str__(self):
-        return "[%s]" % ",".join([ str(x) for x in self.items ])
+        return f'[{",".join([ str(x) for x in self.items ])}]'
     @property
     def variables(self):
         return functools.reduce(lambda x,y: x + y, [ v.variables for v in self.items ], [])
@@ -150,7 +151,7 @@ class ListPairTerm(Term):
         self.head = head
         self.tail = tail
     def __str__(self):
-        return ". ( %s , %s )" % (self.head, self.tail)
+        return f'. ( {self.head} , {self.tail} )'
     @property
     def variables(self):
         return self.head.variables + self.tail.variables
@@ -160,6 +161,8 @@ class Atom:
     def __init__(self,value):
         self.value = value
     def __str__(self):
+        if re.match(r'[A-Za-z_]+', self.value):
+            return self.value
         return repr(self.value)
     @property
     def variables(self):
@@ -170,7 +173,7 @@ class Functor:
         self.name = name
         self.args = args
     def __str__(self):
-        return "%s(%s)" % (str(self.name),",".join([str(a) for a in self.args]))
+        return f'{self.name}({",".join([str(a) for a in self.args])})'
     @property
     def variables(self):
         return functools.reduce(lambda x,y: x + y, [ v.variables for v in self.args ], [])
@@ -180,7 +183,7 @@ class Clause:
         self.head = head
         self.body = body
     def __str__(self):
-        return "%s :- %s" % (str(self.head),str(self.body))
+        return f'{self.head} :- {self.body}'
 
 
 class YPPrologVisitor(prologVisitor):
