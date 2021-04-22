@@ -38,19 +38,19 @@ class PredicateAnd:
         self.rhs = rhs
 
 class TruePredicate:
-    def getVariables(self):
+    def get_variables(self):
         return []
     def __str__(self):
         return "true"
 
 class FailPredicate:
-    def getVariables(self):
+    def get_variables(self):
         return []
     def __str__(self):
         return "fail"
 
 class CutPredicate:
-    def getVariables(self):
+    def get_variables(self):
         return []
     def __str__(self):
         return "!"
@@ -62,8 +62,8 @@ class Predicate:
         return self.functor.name.value
     def args(self):
         return self.functor.args
-    def getVariables(self):
-        return self.functor.getVariables()
+    def get_variables(self):
+        return self.functor.get_variables()
     def __str__(self):
         return str(self.functor)
 
@@ -71,8 +71,8 @@ class ConjunctionPredicate:
     def __init__(self,lhs,rhs):
         self.lhs = lhs
         self.rhs = rhs
-    def getVariables(self):
-        return self.lhs.getVariables() + self.rhs.getVariables()
+    def get_variables(self):
+        return self.lhs.get_variables() + self.rhs.get_variables()
     def __str__(self):
         return "( %s , %s )" % (str(self.lhs),str(self.rhs))
 
@@ -80,8 +80,8 @@ class DisjunctionPredicate:
     def __init__(self,lhs,rhs):
         self.lhs = lhs
         self.rhs = rhs
-    def getVariables(self):
-        return self.lhs.getVariables() + self.rhs.getVariables()
+    def get_variables(self):
+        return self.lhs.get_variables() + self.rhs.get_variables()
     def __str__(self):
         return "( %s ; %s )" % (str(self.lhs),str(self.rhs))
 
@@ -89,8 +89,8 @@ class IfThenPredicate:
     def __init__(self,condition,action):
         self.condition = condition
         self.action = action
-    def getVariables(self):
-        return self.condition.getVariables() + self.action.getVariables()
+    def get_variables(self):
+        return self.condition.get_variables() + self.action.get_variables()
     def __str__(self):
         return "( %s -> %s )" % (str(self.condition),str(self.action))
 
@@ -99,8 +99,8 @@ class NegationPredicate:
         self.pred = pred
     def __str__(self):
         return "( \\+ %s )" % str(self.pred)
-    def getVariables(self):
-        return self.pred.getVariables()
+    def get_variables(self):
+        return self.pred.get_variables()
 
 class Term:
     pass
@@ -110,7 +110,7 @@ class NumeralTerm(Term):
         self.num = s
     def __str__(self):
         return self.num
-    def getVariables(self):
+    def get_variables(self):
         return []
 
 class VariableTerm(Term):
@@ -118,7 +118,7 @@ class VariableTerm(Term):
         self.varname = s
     def __str__(self):
         return self.varname
-    def getVariables(self):
+    def get_variables(self):
         return [ self.varname ]
 
 class AnonymousVariableTerm(VariableTerm):
@@ -131,8 +131,8 @@ class ListTerm(Term):
         self.items = l
     def __str__(self):
         return "[%s]" % ",".join([ str(x) for x in self.items ])
-    def getVariables(self):
-        return functools.reduce(lambda x,y: x + y, [ v.getVariables() for v in self.items ], [])
+    def get_variables(self):
+        return functools.reduce(lambda x,y: x + y, [ v.get_variables() for v in self.items ], [])
 
 class ListPairTerm(Term):
     def __init__(self,head,tail):
@@ -140,8 +140,8 @@ class ListPairTerm(Term):
         self.tail = tail
     def __str__(self):
         return ". ( %s , %s )" % (self.head, self.tail)
-    def getVariables(self):
-        return self.head.getVariables() + self.tail.getVariables()
+    def get_variables(self):
+        return self.head.get_variables() + self.tail.get_variables()
 
 
 class Atom:
@@ -149,7 +149,7 @@ class Atom:
         self.value = value
     def __str__(self):
         return repr(self.value)
-    def getVariables(self):
+    def get_variables(self):
         return []
 
 class Functor:
@@ -158,8 +158,8 @@ class Functor:
         self.args = args
     def __str__(self):
         return "%s(%s)" % (str(self.name),",".join([str(a) for a in self.args]))
-    def getVariables(self):
-        return functools.reduce(lambda x,y: x + y, [ v.getVariables() for v in self.args ], [])
+    def get_variables(self):
+        return functools.reduce(lambda x,y: x + y, [ v.get_variables() for v in self.args ], [])
 
 class Clause:
     def __init__(self,head,body):

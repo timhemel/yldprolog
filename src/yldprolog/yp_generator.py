@@ -405,7 +405,7 @@ class YPPrologCompiler:
         self.cutIfCounter += 1
         return "cutIf"+str(self.cutIfCounter)
     def getFreeVariables(self,expr):
-        variables = expr.getVariables()
+        variables = expr.get_variables()
         return self.filterFreeVariables(variables)
 
 _output_header = '''#
