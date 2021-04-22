@@ -29,7 +29,7 @@ from antlr4 import *
 from .prologLexer import *
 from .prologParser import *
 from .YPPrologVisitor import *
-from .YPGenerator import *
+from .yp_generator import *
 import contextlib
 import click
 from .errors import ParseError
