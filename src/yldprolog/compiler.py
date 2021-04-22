@@ -28,7 +28,7 @@ import antlr4
 from antlr4 import *
 from .prologLexer import *
 from .prologParser import *
-from .YPPrologVisitor import *
+from .yp_prolog_visitor import *
 from .yp_generator import *
 import contextlib
 import click

@@ -21,7 +21,7 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 
 import functools
-from .YPPrologVisitor import *
+from .yp_prolog_visitor import *
 
 class YPCodeExpr:
     def __init__(self,expr):
