@@ -24,27 +24,38 @@ import sys
 import itertools
 import functools
 import inspect
+from abc import abstractmethod
 
 class YPException(Exception):
+    '''Exception thrown by the engine.'''
     pass
 
 class IUnifiable(object):
-    """Base interface for all term types that can be unified."""
-    pass
+    '''Base interface for all term types that can be unified.'''
+
+    @abstractmethod
+    def to_python(self):
+        '''converts the object's Prolog value to Python.'''
+
+    @abstractmethod
+    def unify(self, term):
+        '''unify this object with term.'''
 
 class Atom(IUnifiable):
-    """A Prolog atom. Atoms with the same name will be the same object, i.e. there will never
-    be two different atoms with the same name."""
+    '''A Prolog atom. Atoms with the same name will be the same object, i.e. there will never
+    be two different atoms with the same name.
+    '''
     def __init__(self, name):
         self._name = name
     def name(self):
+        '''return the atom's name.'''
         return self._name
     def to_python(self):
         if self._name == '[]':
             return []
         return self._name
     def __str__(self):
-        return "atom(%s)" % self._name
+        return f'atom({self._name})'
     def unify(self, term):
         arg = get_value(term)
         if isinstance(arg, Atom):
@@ -81,9 +92,9 @@ class Variable(IUnifiable):
         if self._is_bound:
             return "var(%s)" % self._value
         return "var()"
-    def unify(self, arg):
+    def unify(self, term):
         if not self._is_bound:
-            self._value = get_value(arg)
+            self._value = get_value(term)
             if self._value == self:
                 yield False
             else:
@@ -93,7 +104,7 @@ class Variable(IUnifiable):
                 finally:
                     self._is_bound = False
         else: # is bound
-            for l1 in unify(self, arg):
+            for l1 in unify(self, term):
                 yield False
 
 
@@ -129,7 +140,7 @@ class Functor(IUnifiable):
             return YPFail()
 
 class Answer:
-    """Datastructure to represent predicates/facts."""
+    """Data structure to represent predicates/facts."""
     def __init__(self, values):
         self.values = values
     def match(self, args):
@@ -160,6 +171,7 @@ class YPSuccess(object):
         pass
 
 def chain_functions(func1, func2):
+    '''returns a new function that returns func1's results, then func2's.'''
     funcs = [f for f in [func1, func2] if f is not None]
     def chain(*args):
         return itertools.chain(*[f(*args) for f in funcs])
@@ -217,6 +229,7 @@ def unify_arrays(array1, array2):
             iterators[i].close()
 
 def builtin_eq(arg1, arg2):
+    '''Implementation for the Prolog = operator.'''
     for l in unify(arg1,arg2):
         yield False
 
@@ -253,6 +266,7 @@ class YP(object):
         }
 
     def builtin_neq(self,arg1, arg2):
+        '''Implementation for the Prolog /= operator.'''
         doBreak = False
         for _ in [1]:
             X = arg1
@@ -327,6 +341,8 @@ class YP(object):
         If overwrite is True, it will overwrite existing function definitions. Otherwise,
         function definitions will be combined. Functions with the same name but a different
         number of arguments will be overwritten or combined. This could cause runtime errors.
+        Note: since yldprolog version 1.1.0, generated function names include the arity,
+        making this problem less likely.
         """
         new_context = self.eval_context.copy()
         code = compile(s, fn, 'exec')
@@ -347,9 +363,11 @@ class YP(object):
             self.load_script_from_string(f.read(), fn=fn, overwrite=overwrite)
     
     def register_function(self, name, func):
-        """Makes the function func available to the engine with name name. This can be used
-        to call custom functions. These function will have to behave as Prolog functions, i.e.
-        they will need to yield boolean values.
+        """Makes the function func available to the engine with Prolog name name. This can
+        be used to call custom functions, implemented in Python. These function will have
+        to behave as Prolog functions, i.e. they will need to yield boolean values.
+        Since yldprolog 1.1.0, the arity is appended to name, allowing you to register
+        functions with the same, but different arities.
         """
         arity = len(inspect.signature(func).parameters)
         self.eval_context[f'{name}_{arity}'] = func
