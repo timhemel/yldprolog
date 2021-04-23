@@ -20,7 +20,7 @@
 # version 3
 # SPDX-License-Identifier: AGPL-3.0-only
 
-import functools
+import itertools
 from .yp_prolog_visitor import *
 
 class YPCodeExpr:
@@ -153,7 +153,7 @@ class YPPrologCompiler:
         funcs = []
         for func,clauses in program.items():
             self._debug(f'Compiling clauses for {func}')
-            body = functools.reduce(lambda x,y: x+y, [ self.compile_function_body(c) for c in clauses ], [] )
+            body = itertools.chain.from_iterable( self.compile_function_body(c) for c in clauses )
             funcs.append(self.compile_function(func,body))
         return YPCodeProgram(funcs)
     def compile_function_body(self,clause):
@@ -208,9 +208,9 @@ class YPPrologCompiler:
                 if body.lhs.functor.name.value == '$CUTIF':
                     self._debug("------ case: $CUTIF, A")
                     label = body.lhs.functor.args[0].value
-                    codeA = self.compile_body(body.rhs)
-                    codeB = [ YPCodeBreakBlock(label) ]
-                    return codeA + codeB
+                    code_a = self.compile_body(body.rhs)
+                    code_b = [ YPCodeBreakBlock(label) ]
+                    return code_a + code_b
                 else:
                     self._debug("------ case: A,B")
                     coderhs = self.compile_body(body.rhs)
@@ -416,7 +416,7 @@ _output_header = '''#
 class YPPythonCodeGenerator:
     def __init__(self, context):
         self.context = context
-        self.loopLevel = 0
+        self.loop_level = 0
         self.tabwidth = 2
         self.indentation = 0
     def generate(self,code):
@@ -429,7 +429,6 @@ class YPPythonCodeGenerator:
     def generate_code_list(self,l):
         parts = [ c.generate(self) for c in l ]
         return self.lines(*parts)
-        # return functools.reduce(lambda x,y: x+y, parts, [])
     def generate_program(self,program):
         funcs = [ func.generate(self) + self.nl() for func in program.functions]
         return self.lines(*funcs)
@@ -533,11 +532,11 @@ class YPPythonCodeGenerator:
     def generate_value(self,expr):
         return expr.val
     def _get_loop_var(self):
-        return 'l'+str(self.loopLevel+1)
+        return 'l'+str(self.loop_level+1)
     def _enter_loop(self):
-        self.loopLevel += 1
+        self.loop_level += 1
     def _leave_loop(self):
-        self.loopLevel -= 1
+        self.loop_level -= 1
     def indent(self):
         self.indentation += 1
     def dedent(self):
