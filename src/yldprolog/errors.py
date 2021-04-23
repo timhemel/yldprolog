@@ -1,6 +1,10 @@
 
-class ParseError(Exception):
+class CompilerError(Exception):
+    '''Error thrown during compilation.'''
+
     def __init__(self, filename, ctx, msg):
+        '''filename is the filename in which the error occured, ctx is an ANTLR
+        context, and msg is the error message.'''
         self.filename = filename
         self.line = ctx.start.line
         self.column = ctx.start.column

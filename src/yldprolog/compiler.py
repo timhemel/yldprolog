@@ -32,7 +32,7 @@ from .yp_prolog_visitor import *
 from .yp_generator import *
 import contextlib
 import click
-from .errors import ParseError
+from .errors import CompilerError
 
 def _compile_prolog_from_stream(inp, ctx):
     '''compiles prolog source from an antlr4 stream.'''
@@ -140,7 +140,7 @@ def main(ctx, source, outfile, debug, debug_parser, debug_generator, debug_filen
                 try:
                     pythoncode = _compile_prolog_from_stream(inf, ctx)
                     outf.write(pythoncode)
-                except ParseError as e:
+                except CompilerError as e:
                     raise click.ClickException(str(e)) from e
 
 if __name__=="__main__":
