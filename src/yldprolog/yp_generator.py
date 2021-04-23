@@ -443,7 +443,7 @@ class YPPythonCodeGenerator:
         self.indent()
         code = self.generate_code_list(func.body)
         self.dedent()
-        # breakCode = self.generate_break_code() # level <= 1, not needed
+        # break_code = self.generate_break_code() # level <= 1, not needed
         false_yield_code = self.generate_code_list( [ YPCodeIf(YPCodeExpr(False),[YPCodeYieldFalse()]) ])
         self.dedent()
         return self.lines(s, unset_break_code, wrap_code, code, false_yield_code)
