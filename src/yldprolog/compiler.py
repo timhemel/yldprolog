@@ -42,7 +42,7 @@ def compile_prolog_from_stream(inp, ctx):
     visitor = YPPrologVisitor(ctx)
     program = visitor.visit(tree)
     compiler = YPPrologCompiler(ctx)
-    code = compiler.compileProgram(program)
+    code = compiler.compile_program(program)
     generator = YPPythonCodeGenerator(ctx)
     pythoncode = generator.generate(code)
     return pythoncode
