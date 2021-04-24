@@ -1,6 +1,6 @@
 # yldprolog
 
-yldprolog is a rewrite of Yield Prolog, which compiles Prolog into source code that you can embed in your code. Yield Prolog supports several programming languages, yldprolog only supports Python.
+yldprolog is a rewrite of [YieldProlog](http://yieldprolog.sourceforge.net/), which compiles Prolog into source code that you can embed in your code. Yield Prolog supports several programming languages, yldprolog only supports Python.
 
 The rewrite grew out of the need to run multiple Prolog instances concurrently. In Yield Prolog, the active instance is a Python module, and therefore it is cumbersome to have multiple instances at the same time. This rewrite uses object instances instead, which make this much easier.
 
