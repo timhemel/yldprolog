@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Support for binary Prolog operators == and /=. Partial support for other binary operators.
+- Support for binary Prolog operators = and /=. Partial support for other binary operators.
 - Functors with the same name but different arities work.
 
 ### Changed
