@@ -38,4 +38,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - rewrite of [YieldProlog](http://yieldprolog.sourceforge.net/).
 
-
+[1.1.0]: https://github.com/timhemel/yldprolog/compare/1.0.0...1.1.0
+[1.0.0]: https://github.com/timhemel/yldprolog/releases/tag/1.0.0
