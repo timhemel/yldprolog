@@ -336,7 +336,7 @@ class YPPrologVisitor(prologVisitor):
         if ctx.VARIABLE() is not None:
             return self.visitVARIABLE(ctx.VARIABLE())
         if ctx.term() != []:
-            term = self.visitTerm(ctx.term())
+            term = self.visitTerm(ctx.term(0))
             return term
         else:
             self._debug('UNKNOWN TERM',ctx.getText() )

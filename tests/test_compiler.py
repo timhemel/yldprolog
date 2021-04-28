@@ -71,6 +71,12 @@ def test_compile_binary_operator_neq():
             'neq(X,Y) :- X \\= Y.', TestContext)
     assert re.search(r'\\=',s)
 
+def test_compile_expression_in_parentheses():
+    s = yldprolog.compiler.compile_prolog_from_string(
+            'neq(X,Y) :- (X \\= Y).', TestContext)
+    assert re.search(r'\\=',s)
+
+
 def test_compile_functor_arity():
     s = yldprolog.compiler.compile_prolog_from_string('''
     likes(A,B) :- person(A), person(B), friend(A,B).
