@@ -393,7 +393,7 @@ def test_query_operator_neq_atom_atom():
     # v1 = yp.variable()
     a1 = yp.atom(1)
     a2 = yp.atom(2)
-    q = yp.query('/=', [a1, a2])
+    q = yp.query('\\=', [a1, a2])
     r = list(q)
     assert len(r) == 1
 

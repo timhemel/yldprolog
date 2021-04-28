@@ -266,7 +266,7 @@ class YP(object):
         }
 
     def builtin_neq(self,arg1, arg2):
-        '''Implementation for the Prolog /= operator.'''
+        '''Implementation for the Prolog \\= operator.'''
         doBreak = False
         for _ in [1]:
             X = arg1
@@ -289,7 +289,7 @@ class YP(object):
 
     def _set_builtin_predicates(self):
         self.register_function('=', builtin_eq)
-        self.register_function('/=', self.builtin_neq)
+        self.register_function('\\=', self.builtin_neq)
 
     def clear(self):
         """clears all defined atoms, variables, facts and rules."""

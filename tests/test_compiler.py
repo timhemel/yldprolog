@@ -61,10 +61,15 @@ def test_compile_syntax_error():
         s = yldprolog.compiler.compile_prolog_from_string(
             "member(X,[Y|L] :- member(X,L).", TestContext)
 
-def test_compile_binary_operator():
+def test_compile_binary_operator_gt():
     s = yldprolog.compiler.compile_prolog_from_string(
             "gt(X,Y) :- X > Y.", TestContext)
     assert re.search(r'gt',s)
+
+def test_compile_binary_operator_neq():
+    s = yldprolog.compiler.compile_prolog_from_string(
+            'neq(X,Y) :- X \\= Y.', TestContext)
+    assert re.search(r'\\=',s)
 
 def test_compile_functor_arity():
     s = yldprolog.compiler.compile_prolog_from_string('''
