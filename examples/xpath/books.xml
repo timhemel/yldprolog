@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<!-- https://www.goodreads.com/shelf/show/prolog -->
+<books>
+	<book>
+		<author>Ivan Bratko</author>
+		<title>PROLOG: Programming for Artificial Intelligence</title>
+		<year>2000</year>
+	</book>
+	<book>
+		<author>Leon Sterling</author>
+		<title>The Art Of Prolog: Advanced Programming Techniques</title>
+		<year>1986</year>
+	</book>
+	<book>
+		<author>William F. Clocksin</author>
+		<title>Programming in PROLOG: Using the ISO Standard</title>
+		<year>2003</year>
+	</book>
+	<book>
+		<author>Dennis Merritt</author>
+		<title>Expert Systems in Prolog</title>
+		<year>2017</year>
+	</book>
+	<book>
+		<author>Patrick Blackburn</author>
+		<title>Learn PROLOG Now!</title>
+		<year>2006</year>
+	</book>
+</books>
