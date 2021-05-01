@@ -341,8 +341,8 @@ class YP(object):
         If overwrite is True, it will overwrite existing function definitions. Otherwise,
         function definitions will be combined. Functions with the same name but a different
         number of arguments will be overwritten or combined. This could cause runtime errors.
-        Note: since yldprolog version 1.1.0, generated function names include the arity,
-        making this problem less likely.
+        Note: since yldprolog version 1.1.0, the compiler generates function names that include
+        the arity, making this problem less likely.
         """
         new_context = self.eval_context.copy()
         code = compile(s, fn, 'exec')
