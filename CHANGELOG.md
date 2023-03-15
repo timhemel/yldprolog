@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
+- Documentation and example of accessing the Python world from the Prolog world.
+
 ### Changed
 ### Deprecated
 ### Removed
@@ -18,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- The operator \= is now mapped to the built-in neq operator implementation.
+- The operator `\=` is now mapped to the built-in neq operator implementation, instead of `/=`, which the parser did not recognize.
 - Expressions in parentheses no longer give an error message.
 
 
