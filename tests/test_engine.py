@@ -405,6 +405,40 @@ def test_query_operator_neq_atom_atom():
     r = list(q)
     assert len(r) == 1
 
+def test_builtin_predicate_findall():
+    s = compile_prolog_from_string('''
+    age(peter, 7).
+    age(ann, 5).
+    age(pat, 8).
+    age(tom, 5).
+    ''', TestContext)
+    print(s)
+    yp = YP()
+    yp.load_script_from_string(s, overwrite=False)
+    v_child = yp.variable()
+    v_age = yp.variable()
+    v_list = yp.variable()
+
+    q = yp.query('age', [v_child, v_age])
+    result1 = [ to_python(v_child) for x in q ]
+    assert result1 == ['peter', 'ann', 'pat', 'tom' ]
+
+    q = yp.query('age', [v_child, 5])
+    result2 = [ to_python(v_child) for x in q ]
+    assert result2 == [ 'ann', 'tom' ]
+
+    goal1 = yp.functor("age", [v_child, v_age])
+    q = yp.query('findall', [v_child, goal1, v_list])
+    r = [ to_python(v_list) for x in q ]
+    assert len(r) == 1
+    assert r[0] == result1
+
+    goal2 = yp.functor("age", [v_child, 5])
+    q = yp.query('findall', [v_child, goal2, v_list])
+    r = [ to_python(v_list) for x in q ]
+    assert len(r) == 1
+    assert r[0] == result2
+
 def test_load_scripts_with_dependencies_in_order(get_compiled_file):
     yp = YP()
     yp.load_script_from_file(get_compiled_file('subscript.prolog'), overwrite=False)

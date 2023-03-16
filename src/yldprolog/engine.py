@@ -296,9 +296,17 @@ class YP(object):
         if False:
                 yield False
 
+    def findall(self, template, goal, bag):
+        # assumes goal is instantiated
+        q = self.query(goal._name,goal._args)
+        results = self.makelist([ get_value(template) for r in q ])
+        for y in unify(bag, results):
+            yield False
+
     def _set_builtin_predicates(self):
         self.register_function('=', builtin_eq)
         self.register_function('\\=', self.builtin_neq)
+        self.register_function('findall', self.findall)
 
     def clear(self):
         """clears all defined atoms, variables, facts and rules."""
