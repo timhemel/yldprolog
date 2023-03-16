@@ -300,20 +300,28 @@ class YP(object):
                 yield False
 
     def findall(self, template, goal, bag):
+        '''findall/3 returns values according to template into bag, that satisfy goal.'''
         # assumes goal is instantiated
         q = self.query(goal._name,goal._args)
         results = self.makelist([ get_value(template) for r in q ])
         for y in unify(bag, results):
             yield False
 
-    def call(self, functor):
-        yield from self.query(functor._name, functor._args)
+    def call(self, goal):
+        '''call/1 calls goal.'''
+        yield from self.query(goal._name, goal._args)
+
+    def once(self, goal):
+        '''once/1 calls goal only once.'''
+        q = self.call(goal)
+        yield next(q)
 
     def _set_builtin_predicates(self):
         self.register_function('=', builtin_eq)
         self.register_function('\\=', self.builtin_neq)
         self.register_function('findall', self.findall)
         self.register_function('call', self.call)
+        self.register_function('once', self.once)
 
     def clear(self):
         """clears all defined atoms, variables, facts and rules."""

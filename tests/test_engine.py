@@ -449,7 +449,6 @@ def test_builtin_predicate_call():
     yp.load_script_from_string(s, overwrite=False)
     v_child = yp.variable()
     v_age = yp.variable()
-    v_list = yp.variable()
     f_age = yp.functor('age', [v_child, 5])
 
     q = yp.query('age', [v_child, 5])
@@ -464,7 +463,26 @@ def test_builtin_predicate_call():
     result3 = [ to_python(v_child) for x in q ]
     assert result3 == result1
 
+def test_builtin_predicate_once():
+    s = compile_prolog_from_string('''
+    age(peter, 7).
+    age(ann, 5).
+    age(pat, 8).
+    age(tom, 5).
+    ''', TestContext)
+    yp = YP()
+    yp.load_script_from_string(s, overwrite=False)
+    v_child = yp.variable()
+    v_age = yp.variable()
+    f_age = yp.functor('age', [v_child, v_age])
 
+    q = yp.once(f_age)
+    result1 = [ to_python(v_child) for x in q ]
+    assert result1 == [ 'peter' ]
+
+    q = yp.query('once', [f_age])
+    result2 = [ to_python(v_child) for x in q ]
+    assert result2 == result1
 
 
 def test_load_scripts_with_dependencies_in_order(get_compiled_file):
