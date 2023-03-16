@@ -34,6 +34,10 @@ class IUnifiable(object):
     '''Base interface for all term types that can be unified.'''
 
     @abstractmethod
+    def get_value(self):
+        '''gets the instantiated value of this object.'''
+
+    @abstractmethod
     def to_python(self):
         '''converts the object's Prolog value to Python.'''
 
@@ -50,6 +54,8 @@ class Atom(IUnifiable):
     def name(self):
         '''return the atom's name.'''
         return self._name
+    def get_value(self):
+        return self
     def to_python(self):
         if self._name == '[]':
             return []
@@ -116,6 +122,9 @@ class Functor(IUnifiable):
         """
         self._name = name
         self._args = args
+    def get_value(self):
+        valargs = [ get_value(a) for a in self._args ]
+        return Functor(self._name, valargs)
     def to_python(self):
         if self._name == ".":
             # listpair
@@ -179,8 +188,8 @@ def chain_functions(func1, func2):
 
 def get_value(v):
     """Return the value of a Prolog term. Constants and functors will return themselves,
-    variables will be expanded if bound. Does not recursively expand variables."""
-    if isinstance(v, Variable):
+    variables will be expanded if bound. Recursively expands variables."""
+    if isinstance(v, IUnifiable):
         return v.get_value()
     return v
 

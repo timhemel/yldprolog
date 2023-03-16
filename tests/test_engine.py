@@ -196,7 +196,7 @@ def test_unify_variable_complex_atom():
     a1 = yp.functor("point", [1, 1])
     v1 = yp.variable()
     r = [v1.get_value() for x in unify(v1, a1)]
-    assert r == [a1]
+    assert to_python(r[0]) == to_python(a1)
 
 def test_unify_complex_atoms():
     yp = YP()
@@ -241,6 +241,14 @@ def test_unify_lists_with_makelist():
     l2 = yp.makelist([yp.atom("a"), v1])
     r = [v1.get_value() for x in unify(l1, l2)]
     assert r == [yp.atom("b")]
+
+def test_get_value_recursively():
+    yp = YP()
+    v = yp.variable()
+    f = yp.functor("point", [v, yp.atom('b')])
+    a = yp.atom('a')
+    r = [f.get_value() for x in unify(v, a)]
+    assert to_python(r[0]) == ('point', ['a','b'])
 
 
 # test loading a script
