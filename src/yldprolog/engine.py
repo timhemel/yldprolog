@@ -25,6 +25,9 @@ import itertools
 import functools
 import inspect
 from abc import abstractmethod
+import logging
+
+logger = logging.getLogger(__name__)
 
 class YPException(Exception):
     '''Exception thrown by the engine.'''
@@ -303,10 +306,14 @@ class YP(object):
         for y in unify(bag, results):
             yield False
 
+    def call(self, functor):
+        yield from self.query(functor._name, functor._args)
+
     def _set_builtin_predicates(self):
         self.register_function('=', builtin_eq)
         self.register_function('\\=', self.builtin_neq)
         self.register_function('findall', self.findall)
+        self.register_function('call', self.call)
 
     def clear(self):
         """clears all defined atoms, variables, facts and rules."""
