@@ -8,14 +8,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-
-- Documentation and example of accessing the Python world from the Prolog world.
-
 ### Changed
 ### Deprecated
 ### Removed
 ### Fixed
 ### Security
+
+
+## [1.1.2] - 2023-03-16
+
+### Added
+
+- Documentation and example of accessing the Python world from the Prolog world.
+- Built-in predicate `findall/3`.
+- Built-in predicate `call/1`.
+- Built-in predicate `once/1`.
+
+### Fixed
+
+- `get_value` now recursively expands variables.
+- Pin the antlr python library to the antlr version that generated the parser.
 
 ## [1.1.1] - 2021-04-28
 
@@ -49,7 +61,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - rewrite of [YieldProlog](http://yieldprolog.sourceforge.net/).
 
-[Unreleased]: https://github.com/timhemel/yldprolog/compare/1.1.1...HEAD
+[Unreleased]: https://github.com/timhemel/yldprolog/compare/1.1.2...HEAD
+[1.1.2]: https://github.com/timhemel/yldprolog/compare/1.1.1...1.1.2
 [1.1.1]: https://github.com/timhemel/yldprolog/compare/1.1.0...1.1.1
 [1.1.0]: https://github.com/timhemel/yldprolog/compare/1.0.0...1.1.0
 [1.0.0]: https://github.com/timhemel/yldprolog/releases/tag/1.0.0
