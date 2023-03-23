@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 ### Security
 
+## [1.2.0] - 2023-03-23
+
+Release 1.1.2 should have been 1.2.0 according to semantic versioning.
 
 ## [1.1.2] - 2023-03-16
 
@@ -61,7 +64,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - rewrite of [YieldProlog](http://yieldprolog.sourceforge.net/).
 
-[Unreleased]: https://github.com/timhemel/yldprolog/compare/1.1.2...HEAD
+[Unreleased]: https://github.com/timhemel/yldprolog/compare/1.2.0...HEAD
+[1.2.0]: https://github.com/timhemel/yldprolog/compare/1.1.2...1.2.0
 [1.1.2]: https://github.com/timhemel/yldprolog/compare/1.1.1...1.1.2
 [1.1.1]: https://github.com/timhemel/yldprolog/compare/1.1.0...1.1.1
 [1.1.0]: https://github.com/timhemel/yldprolog/compare/1.0.0...1.1.0
