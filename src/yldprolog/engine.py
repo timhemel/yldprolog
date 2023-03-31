@@ -416,15 +416,22 @@ class YP(object):
         with open(fn, "r") as f:
             self.load_script_from_string(f.read(), fn=fn, overwrite=overwrite)
     
-    def register_function(self, name, func):
+    def register_function(self, name, func, arity=None):
         """Makes the function func available to the engine with Prolog name name. This can
         be used to call custom functions, implemented in Python. These function will have
         to behave as Prolog functions, i.e. they will need to yield boolean values.
         Since yldprolog 1.1.0, the arity is appended to name, allowing you to register
         functions with the same, but different arities.
+        If arity is None, the arity will be determined from the number of function arguments.
+        If arity is a non-negative integer, that arity will be used.
+        If arity is a negative integer, the function has a variable arity.
         """
-        arity = len(inspect.signature(func).parameters)
-        self.eval_context[f'{name}_{arity}'] = func
+        if arity is None:
+            arity = len(inspect.signature(func).parameters)
+        if arity < 0:
+            self.eval_context[f'{name}_n'] = func
+        else:
+            self.eval_context[f'{name}_{arity}'] = func
 
     def _find_predicates(self, name, arity):
         try:
@@ -464,15 +471,10 @@ class YP(object):
         r = [ V1.get_value() for r in q ]
         assert r == [ yp.atom('tom') ]
         """
-        try:
-            if name not in self.eval_blacklist:
-                function = self.eval_context[f'{name}_{len(args)}']
+        if name not in self.eval_blacklist:
+            function = self.eval_context.get(f'{name}_{len(args)}', self.eval_context.get(f'{name}_n'))
+            if function is not None:
                 return function(*args)
-        except KeyError as e:
-            pass
-        except TypeError as e: # args not matching
-            pass
-
         return self.match_dynamic(self.atom(name), args)
 
     def evaluate_bounded(self, query, projection_function, recursion_limit=200):

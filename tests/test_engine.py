@@ -306,6 +306,19 @@ def test_user_defined_function():
     r = list(q)
     assert side_effects == ['not blue']
 
+def test_register_function_variable_arities():
+    yp = YP()
+    side_effects = []
+    def func(arg1, *args):
+        side_effects.extend(to_python(x) for x in args)
+        for l1 in unify(arg1, yp.atom("blue")):
+            yield False
+    yp.register_function('func', func, arity=-1)
+    q = yp.query('func', [yp.atom('blue'), yp.atom('yellow'), yp.atom('green')])
+    r = list(q)
+    assert side_effects == ['yellow', 'green']
+
+
 def test_run_infinite_script(get_compiled_file):
     yp = YP()
     yp.load_script_from_file(get_compiled_file('monkey.prolog'))
