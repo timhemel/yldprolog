@@ -522,6 +522,17 @@ def test_builtin_predicate_once():
     result2 = [ to_python(v_child) for x in q ]
     assert result2 == result1
 
+def test_builtin_predicate_assertaz():
+    s = compile_prolog_from_string('''
+    initp() :- assertz(p(b)), assertz(p(a)), asserta(p(c)).
+    isp(X) :- initp() , p(X).
+    ''', TestContext)
+    yp = YP()
+    yp.load_script_from_string(s, overwrite=False)
+    v = yp.variable()
+    q = yp.query('isp', [ v ])
+    r = [ to_python(v) for x in q ]
+    assert r == [ 'c', 'b', 'a' ]
 
 def test_load_scripts_with_dependencies_in_order(get_compiled_file):
     yp = YP()

@@ -326,12 +326,30 @@ class YP(object):
         q = self.call(goal)
         yield next(q)
 
+    def asserta(self, term):
+        '''asserta(Term) adds Term to the facts database at the beginning.'''
+        if isinstance(term, Functor):
+            self.assert_fact(self.atom(term._name), term._args, False)
+        elif isinstance(term, Atom):
+            self.assert_fact(term, [], False)
+        return YPSuccess()
+
+    def assertz(self, term):
+        '''assertz(Term) adds Term to the facts database at the end.'''
+        if isinstance(term, Functor):
+            self.assert_fact(self.atom(term._name), term._args)
+        elif isinstance(term, Atom):
+            self.assert_fact(term, [])
+        return YPSuccess()
+
     def _set_builtin_predicates(self):
         self.register_function('=', builtin_eq)
         self.register_function('\\=', self.builtin_neq)
         self.register_function('findall', self.findall)
         self.register_function('call', self.call, arity=-1)
         self.register_function('once', self.once)
+        self.register_function('assertz', self.assertz)
+        self.register_function('asserta', self.asserta)
 
     def clear(self):
         """clears all defined atoms, variables, facts and rules."""
@@ -346,9 +364,11 @@ class YP(object):
         """
         self._atom_store.setdefault(name, Atom(name))
         return self._atom_store[name]
+
     def variable(self):
         """Create a variable in this engine."""
         return Variable()
+
     def functor(self, name, args):
         """Create a functor in this engine with name name and the list of Prolog terms args
         as the functor arguments."""
@@ -362,6 +382,7 @@ class YP(object):
     def functor3(self, name, arg1, arg2, arg3):
         """Compatibility function for creating a functor with three arguments."""
         return Functor(name, [arg1, arg2, arg3])
+
     def listpair(self, head, tail):
         """Creates a Prolog listpair representing [head|tail]. An empty list is
         represented by the ATOM_NIL object member.
@@ -370,6 +391,7 @@ class YP(object):
             prologlist = yp.listpair(yp.atom('a'),yp.listpair(yp.atom('b'),yp.ATOM_NIL))
         """
         return Functor(self.ATOM_DOT, [head, tail])
+
     def makelist(self, l):
         """Creates a Prolog list from a Python list. l is a list of Prolog terms."""
         r = functools.reduce(lambda x, y: self.listpair(y, x), reversed(l), self.ATOM_NIL)
@@ -430,7 +452,7 @@ class YP(object):
     def _update_predicate(self, name, arity, clauses):
         self._predicates_store[(name.name(), arity)] = clauses
 
-    def assert_fact(self, name, values):
+    def assert_fact(self, name, values, append=True):
         """From the original YieldProlog:
 
         assert values at the end of the set of facts for the predicate with the
@@ -443,8 +465,12 @@ class YP(object):
             # indexedanswers
         except YPException as e:
             clauses = []
-        clauses.append(Answer(values))
+        if append:
+            clauses.append(Answer(values))
+        else:
+            clauses.insert(0, Answer(values))
         self._update_predicate(name, len(values), clauses)
+
     def query(self, name, args):
         """Creates a Prolog query for the symbol name, with arguments args. name is a string,
         args is a list of Prolog terms. The query will only be constructed, but not evaluated.
@@ -505,7 +531,7 @@ class YP(object):
         try:
             clauses = self._find_predicates(name.name(), len(args))
             return self._match_all_clauses(clauses, args)
-        except YPException:
+        except YPException as e:
             return YPFail()
 
     def _match_all_clauses(self, clauses, args):
