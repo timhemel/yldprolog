@@ -275,6 +275,14 @@ class YP(object):
             'query': self.query,
             'True': True,
             'False': False,
+            'call_1' : self.call,
+            'call_2' : self.call,
+            'call_3' : self.call,
+            'call_4' : self.call,
+            'call_5' : self.call,
+            'call_6' : self.call,
+            'call_7' : self.call,
+            'call_8' : self.call,
         }
 
     def builtin_neq(self,arg1, arg2):
@@ -307,9 +315,23 @@ class YP(object):
         for y in unify(bag, results):
             yield False
 
-    def call(self, goal):
+    def xcall(self, goal):
         '''call/1 calls goal.'''
         yield from self.query(goal._name, goal._args)
+
+    def call(self,goal,*args):
+        '''call/2 (:Goal, Arg, ...). Calls Goal with args appended to its arguments.'''
+        goal_value = get_value(goal)
+        if isinstance(goal_value, Atom):
+            goal_name = to_python(goal_value)
+            goal_args = []
+        elif isinstance(goal_value, Functor):
+            goal_name = goal._name
+            goal_args = goal._args
+        else:
+            # TODO: raise exception
+            pass
+        yield from self.query(goal_name, goal_args + list(args))
 
     def once(self, goal):
         '''once/1 calls goal only once.'''
@@ -320,7 +342,7 @@ class YP(object):
         self.register_function('=', builtin_eq)
         self.register_function('\\=', self.builtin_neq)
         self.register_function('findall', self.findall)
-        self.register_function('call', self.call)
+        #self.register_function('call', self.call)
         self.register_function('once', self.once)
 
     def clear(self):

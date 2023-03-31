@@ -463,6 +463,14 @@ def test_builtin_predicate_call():
     result3 = [ to_python(v_child) for x in q ]
     assert result3 == result1
 
+    q = yp.query('call', [yp.functor('age',[v_child]), 5])
+    result4 = [ to_python(v_child) for x in q ]
+    assert result4 == result1
+
+    q = yp.query('call', [yp.atom('age'), v_child, 5])
+    result5 = [ to_python(v_child) for x in q ]
+    assert result5 == result1
+
 def test_builtin_predicate_once():
     s = compile_prolog_from_string('''
     age(peter, 7).
