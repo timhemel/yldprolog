@@ -318,6 +318,23 @@ def test_register_function_variable_arities():
     r = list(q)
     assert side_effects == ['yellow', 'green']
 
+def test_facts_and_function():
+    s = compile_prolog_from_string('''
+    person(mike).
+    person(joe).
+    person(pete).
+    person(zack).
+    ''', TestContext)
+
+    yp = YP()
+    yp.assert_fact(yp.atom('person'), [yp.atom('tom')])
+    yp.assert_fact(yp.atom('person'), [yp.atom('jerry')])
+    yp.load_script_from_string(s, overwrite=False)
+    v = yp.variable()
+    q = yp.query('person', [v])
+    r = [ to_python(v) for x in q ]
+    assert r == [ 'tom', 'jerry', 'mike', 'joe', 'pete', 'zack' ]
+
 
 def test_run_infinite_script(get_compiled_file):
     yp = YP()

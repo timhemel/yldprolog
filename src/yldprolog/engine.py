@@ -459,11 +459,11 @@ class YP(object):
         r = [ V1.get_value() for r in q ]
         assert r == [ yp.atom('tom') ]
         """
+        yield from self.match_dynamic(self.atom(name), args)
         if name not in self.eval_blacklist:
             function = self.eval_context.get(f'{name}_{len(args)}', self.eval_context.get(f'{name}_n'))
             if function is not None:
-                return function(*args)
-        return self.match_dynamic(self.atom(name), args)
+                yield from function(*args)
 
     def evaluate_bounded(self, query, projection_function, recursion_limit=200):
         """Evaluates a query, but limits the recursion depth to recursion_limit. If a query
