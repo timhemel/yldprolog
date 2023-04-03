@@ -8,8 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+### Changed
+### Deprecated
+### Removed
+### Fixed
+### Security
 
-- added `call/n` predicate
+## [1.3.0] - 2023-04-03
+
+### Added
+
+- added `call/n` predicate (replacing call/1)
 - added `asserta/1` and `assertz/1` predicates
 - added `retract/1` and `retractall/1` predicates
 
@@ -18,10 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - results are returned from both facts (first) and functions.
 - functions with variable arguments can be registered with fixed or variable arity.
 
-### Deprecated
-### Removed
 ### Fixed
-### Security
+
+- fix reference to project in license texts.
+
 
 ## [1.2.0] - 2023-03-23
 
@@ -73,7 +82,8 @@ Release 1.1.2 should have been 1.2.0 according to semantic versioning.
 
 - rewrite of [YieldProlog](http://yieldprolog.sourceforge.net/).
 
-[Unreleased]: https://github.com/timhemel/yldprolog/compare/1.2.0...HEAD
+[Unreleased]: https://github.com/timhemel/yldprolog/compare/1.3.0...HEAD
+[1.3.0]: https://github.com/timhemel/yldprolog/compare/1.2.0...1.3.0
 [1.2.0]: https://github.com/timhemel/yldprolog/compare/1.1.2...1.2.0
 [1.1.2]: https://github.com/timhemel/yldprolog/compare/1.1.1...1.1.2
 [1.1.1]: https://github.com/timhemel/yldprolog/compare/1.1.0...1.1.1
