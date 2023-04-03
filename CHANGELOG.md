@@ -8,7 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
+- added `call/n` predicate
+- added `asserta/1` and `assertz/1` predicates
+- added `retract/1` and `retractall/1` predicates
+
 ### Changed
+
+- results are returned from both facts (first) and functions.
+- functions with variable arguments can be registered with fixed or variable arity.
+
 ### Deprecated
 ### Removed
 ### Fixed
