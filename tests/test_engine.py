@@ -534,6 +534,73 @@ def test_builtin_predicate_assertaz():
     r = [ to_python(v) for x in q ]
     assert r == [ 'c', 'b', 'a' ]
 
+def test_builtin_predicate_asserta_multiple():
+    s = compile_prolog_from_string('''
+    initp() :- assertz(p(a)), assertz(p(a)), assertz(p(b)), asserta(p(c)).
+    isp(X) :- initp() , p(X).
+    ''', TestContext)
+    yp = YP()
+    yp.load_script_from_string(s, overwrite=False)
+    v = yp.variable()
+    q = yp.query('isp', [ v ])
+    r = [ to_python(v) for x in q ]
+    assert r == [ 'c', 'a', 'a', 'b' ]
+
+def test_builtin_predicate_retract_single_atom():
+    s = compile_prolog_from_string('''
+    foo(X) :- assertz(p(b)), assertz(p(a)), asserta(p(c)), retract(p(a)), p(X).
+    ''', TestContext)
+    yp = YP()
+    yp.load_script_from_string(s, overwrite=False)
+    v = yp.variable()
+    q = yp.query('foo', [ v ])
+    r = [ to_python(v) for x in q ]
+    assert r == [ 'c', 'b' ]
+
+def test_builtin_predicate_retract_duplicate_atom():
+    s = compile_prolog_from_string('''
+    foo(X) :- assertz(p(b)), assertz(p(a)), assertz(p(a)), asserta(p(c)), retract(p(a)), p(X).
+    ''', TestContext)
+    yp = YP()
+    yp.load_script_from_string(s, overwrite=False)
+    v = yp.variable()
+    q = yp.query('foo', [ v ])
+    r = [ to_python(v) for x in q ]
+    assert r == [ 'c', 'b', 'a', 'c', 'b' ]
+
+def test_builtin_predicate_retract_var():
+    s = compile_prolog_from_string('''
+    foo(X) :- assertz(p(b)), assertz(p(a)), assertz(p(a)), asserta(p(c)), retract(p(_)), p(X).
+    ''', TestContext)
+    yp = YP()
+    yp.load_script_from_string(s, overwrite=False)
+    v = yp.variable()
+    q = yp.query('foo', [ v ])
+    r = [ to_python(v) for x in q ]
+    assert r == [ 'b', 'a', 'a', 'a', 'a', 'a' ]
+
+def test_builtin_predicate_retractall_atom():
+    s = compile_prolog_from_string('''
+    foo(X) :- assertz(p(b)), assertz(p(a)), assertz(p(a)), asserta(p(c)), retractall(p(a)), p(X).
+    ''', TestContext)
+    yp = YP()
+    yp.load_script_from_string(s, overwrite=False)
+    v = yp.variable()
+    q = yp.query('foo', [ v ])
+    r = [ to_python(v) for x in q ]
+    assert r == [ 'c', 'b' ]
+
+def test_builtin_predicate_retractall_var():
+    s = compile_prolog_from_string('''
+    foo(X) :- assertz(p(b)), assertz(p(a)), assertz(p(a)), asserta(p(c)), retractall(p(_)), p(X).
+    ''', TestContext)
+    yp = YP()
+    yp.load_script_from_string(s, overwrite=False)
+    v = yp.variable()
+    q = yp.query('foo', [ v ])
+    r = [ to_python(v) for x in q ]
+    assert r == [ ]
+
 def test_load_scripts_with_dependencies_in_order(get_compiled_file):
     yp = YP()
     yp.load_script_from_file(get_compiled_file('subscript.prolog'), overwrite=False)

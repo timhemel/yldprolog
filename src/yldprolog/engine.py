@@ -157,6 +157,8 @@ class Answer:
         self.values = values
     def match(self, args):
         return unify_arrays(args, self.values)
+    def __str__(self):
+        return f'Answer({[to_python(x) for x in self.values]})'
 
 class YPFail(object):
     """Iterator that always stops."""
@@ -342,6 +344,46 @@ class YP(object):
             self.assert_fact(term, [])
         return YPSuccess()
 
+    def retract(self, term):
+        '''retract(Term) removes all dynamic facts matching Term and backtracks over identical clauses.'''
+        if isinstance(term, Functor):
+            name = term._name
+            args = term._args
+        elif isinstance(term, Atom):
+            name = term
+            args = []
+
+        remaining_clauses = self._find_predicates(name, len(args))[:]
+        i = 0
+        while i < len(remaining_clauses):
+            clause = remaining_clauses[i]
+            match = False
+            for cut in clause.match(args):
+                match = True
+                del remaining_clauses[i]
+                self._update_predicate(self.atom(name), len(args), remaining_clauses)
+                yield False
+            if not match:
+                i += 1
+
+    def retractall(self, term):
+        '''retractall(Term) removes all dynamic facts matching Term, without backtracking over identical clauses.'''
+        if isinstance(term, Functor):
+            name = term._name
+            args = term._args
+        elif isinstance(term, Atom):
+            name = term
+            args = []
+        remaining_clauses = []
+        for clause in self._find_predicates(name, len(args)):
+            match = False
+            for cut in clause.match(args):
+                    match = True
+            if not match:
+                remaining_clauses.append(clause)
+        self._update_predicate(self.atom(name), len(args), remaining_clauses)
+        return YPSuccess()
+
     def _set_builtin_predicates(self):
         self.register_function('=', builtin_eq)
         self.register_function('\\=', self.builtin_neq)
@@ -350,6 +392,8 @@ class YP(object):
         self.register_function('once', self.once)
         self.register_function('assertz', self.assertz)
         self.register_function('asserta', self.asserta)
+        self.register_function('retract', self.retract)
+        self.register_function('retractall', self.retractall)
 
     def clear(self):
         """clears all defined atoms, variables, facts and rules."""
@@ -453,13 +497,8 @@ class YP(object):
         self._predicates_store[(name.name(), arity)] = clauses
 
     def assert_fact(self, name, values, append=True):
-        """From the original YieldProlog:
-
-        assert values at the end of the set of facts for the predicate with the
-        name "name" and the arity len(values).
-        "name" must be an Atom.
-        values cannot contain unbound variables.
-        """
+        '''insert name(values) in the set of facts. If append is False, insert the
+        fact at the beginning, otherwise at the end.'''
         try:
             clauses = self._find_predicates(name.name(), len(values))
             # indexedanswers
