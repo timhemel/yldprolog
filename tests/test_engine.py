@@ -546,6 +546,38 @@ def test_builtin_predicate_asserta_multiple():
     r = [ to_python(v) for x in q ]
     assert r == [ 'c', 'a', 'a', 'b' ]
 
+def test_builtin_predicate_assertz_instantiated_variable():
+    s = compile_prolog_from_string('''
+    name(tom).
+    name(jerry).
+    initp() :- name(Y), assertz(p(Y)).
+    isp(X) :- p(X).
+    ''', TestContext)
+    yp = YP()
+    yp.load_script_from_string(s, overwrite=False)
+    q = yp.query('initp', [ ])
+    r = list(q)
+    v = yp.variable()
+    q = yp.query('isp', [ v ])
+    r = [ to_python(v) for x in q ]
+    assert r == [ 'tom', 'jerry' ]
+
+def test_builtin_predicate_assertz_free_variable():
+    s = compile_prolog_from_string('''
+    name(tom).
+    name(jerry).
+    initp() :- assertz(p(_)).
+    isp(X) :- name(X), p(X).
+    ''', TestContext)
+    yp = YP()
+    yp.load_script_from_string(s, overwrite=False)
+    q = yp.query('initp', [ ])
+    r = list(q)
+    v = yp.variable()
+    q = yp.query('isp', [ v ])
+    r = [ to_python(v) for x in q ]
+    assert r == [ 'tom', 'jerry' ]
+
 def test_builtin_predicate_retract_single_atom():
     s = compile_prolog_from_string('''
     foo(X) :- assertz(p(b)), assertz(p(a)), asserta(p(c)), retract(p(a)), p(X).

@@ -504,10 +504,11 @@ class YP(object):
             # indexedanswers
         except YPException as e:
             clauses = []
+        answer = Answer([get_value(v) for v in values])
         if append:
-            clauses.append(Answer(values))
+            clauses.append(answer)
         else:
-            clauses.insert(0, Answer(values))
+            clauses.insert(0, answer)
         self._update_predicate(name, len(values), clauses)
 
     def query(self, name, args):
